@@ -1,0 +1,27 @@
+# Kontakt instrument files (binary, large)
+*.nki
+*.nkx
+*.nkc
+*.nkr
+
+# Audio samples (too large for git)
+Samples/
+*.wav
+*.aif
+*.aiff
+*.mp3
+
+# Logic Pro sessions
+*.logicx/
+*.logic/
+
+# macOS
+.DS_Store
+**/.DS_Store
+*.AppleDouble
+
+# Kontakt cache
+*.cache
+
+# Instruments folder (binary .nki files)
+Instruments/

@@ -1,0 +1,1491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>STRATA — Neve Console</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+:root {
+  --panel:       #C0B49E;
+  --panel-hi:    #D0C6B0;
+  --panel-lo:    #AEA490;
+  --panel-edge:  #8A8070;
+  --panel-dark:  #686058;
+  --inset:       #B0A48E;
+  --wood-a:      #341A08;
+  --wood-b:      #4A2810;
+  --wood-c:      #5C3418;
+  --display-bg:  #161208;
+  --display-txt: #D0A020;
+  --display-sub: #786018;
+  --btn-face:    #DDD4B8;
+  --btn-brd:     #847868;
+  --btn-shadow:  #504840;
+  --screw:       #A09880;
+  --txt-dark:    #1E1A10;
+  --txt-mid:     #4A4030;
+  --txt-lo:      #786050;
+  --amber:       #CC8E10;
+  --amber-glow:  rgba(204,142,16,0.45);
+  --green-led:   #40A828;
+  --red-led:     #C02818;
+}
+.strip.drums   { --lc: #A83020; --lc-dim: rgba(168,48,32,0.15); }
+.strip.bass    { --lc: #284898; --lc-dim: rgba(40,72,152,0.15); }
+.strip.topline { --lc: #186878; --lc-dim: rgba(24,104,120,0.15); }
+.strip.wild    { --lc: #885010; --lc-dim: rgba(136,80,16,0.15); }
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #1A1610;
+  display: flex; align-items: center; justify-content: center;
+  min-height: 100vh;
+  font-family: 'Barlow Condensed', sans-serif;
+  padding: 40px;
+}
+
+/* ─── INSTRUMENT ──────────────────────────────────── */
+.instrument {
+  display: flex;
+  background: var(--panel);
+  border-radius: 12px;
+  border: 2px solid var(--panel-edge);
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.2),
+    0 2px 0 rgba(255,255,255,0.15) inset,
+    0 -2px 0 rgba(0,0,0,0.25) inset,
+    0 40px 100px rgba(0,0,0,0.9),
+    0 8px 20px rgba(0,0,0,0.6);
+  /* brushed aluminum texture */
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      transparent, transparent 1px,
+      rgba(255,255,255,0.06) 1px, rgba(255,255,255,0.06) 2px
+    ),
+    linear-gradient(170deg, #CBBFA8 0%, #BEB09A 35%, #C8BAA4 65%, #B8AC96 100%);
+}
+
+/* ─── WOOD PANELS ─────────────────────────────────── */
+.wood {
+  width: 22px; flex-shrink: 0;
+  background:
+    repeating-linear-gradient(
+      172deg,
+      var(--wood-a) 0px, var(--wood-b) 2px, var(--wood-a) 5px,
+      var(--wood-c) 8px, var(--wood-a) 11px, var(--wood-b) 14px,
+      #28140A 17px, var(--wood-a) 20px
+    );
+  border-right: 1px solid #201008;
+  box-shadow: inset -2px 0 4px rgba(0,0,0,0.4);
+}
+.wood.r { border-right: none; border-left: 1px solid #201008; box-shadow: inset 2px 0 4px rgba(0,0,0,0.4); }
+
+/* ─── CHANNEL STRIP ───────────────────────────────── */
+.strip {
+  width: 210px; flex-shrink: 0;
+  display: flex;
+  border-right: 1px solid var(--panel-dark);
+  position: relative;
+}
+.strip:last-of-type { border-right: none; }
+
+/* Thin colored left edge per layer */
+.strip::before {
+  content: '';
+  position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: var(--lc);
+  opacity: 0.7;
+}
+
+/* ─── LEFT CONTENT COLUMN ─────────────────────────── */
+.strip-left {
+  flex: 1; display: flex; flex-direction: column;
+  padding: 8px 7px 8px 10px;
+  min-width: 0;
+}
+
+/* ─── RIGHT FADER COLUMN ──────────────────────────── */
+.strip-right {
+  width: 46px; flex-shrink: 0;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 34px 0 8px 0;
+  position: relative;
+}
+
+/* ─── SCREW ───────────────────────────────────────── */
+.screw {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, var(--panel-hi), var(--panel-edge));
+  border: 0.5px solid var(--panel-dark);
+  box-shadow: 0.5px 0.5px 1px rgba(0,0,0,0.4);
+  flex-shrink: 0;
+}
+
+/* ─── CHANNEL HEADER ──────────────────────────────── */
+.ch-header {
+  display: flex; align-items: center; gap: 5px;
+  margin-bottom: 6px;
+}
+.ch-num {
+  font-family: 'Space Mono', monospace;
+  font-size: 13px; font-weight: 700;
+  color: var(--txt-dark); letter-spacing: 1px;
+}
+.ch-name {
+  font-size: 13px; font-weight: 700;
+  letter-spacing: 3px; text-transform: uppercase;
+  color: var(--txt-dark);
+  flex: 1;
+}
+
+/* ─── SLOT TABS ───────────────────────────────────── */
+.slot-tabs {
+  display: flex; align-items: center; gap: 3px;
+  margin-bottom: 6px;
+}
+.st {
+  width: 22px; height: 16px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 2px;
+  border: 1px solid var(--btn-brd);
+  background: linear-gradient(180deg, #CBBFA8 0%, #B4A890 100%);
+  font-family: 'Space Mono', monospace; font-size: 8px; font-weight: 700;
+  color: var(--txt-mid); cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.25);
+  transition: all 0.1s;
+}
+.st.active {
+  background: linear-gradient(180deg, #E8C030 0%, #C89818 100%);
+  border-color: #806010;
+  color: #1A1008;
+  box-shadow: 0 0 8px rgba(204,160,20,0.5), 0 1px 2px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+}
+.slot-leds { display: flex; align-items: center; gap: 3px; margin-left: auto; }
+.st-led { width: 5px; height: 5px; border-radius: 50%; background: #888070; border: 0.5px solid #686050; }
+.st-led.on { background: var(--lc); box-shadow: 0 0 5px rgba(var(--lc-rgb, 168,48,32), 0.8); border-color: var(--lc); }
+/* Individual strip LED colors */
+.strip.drums   .st-led.on { background: var(--lc); box-shadow: 0 0 5px #A83020; }
+.strip.bass    .st-led.on { background: var(--lc); box-shadow: 0 0 5px #284898; }
+.strip.topline .st-led.on { background: var(--lc); box-shadow: 0 0 5px #186878; }
+.strip.wild    .st-led.on { background: var(--lc); box-shadow: 0 0 5px #885010; }
+
+/* ─── DISPLAY PANEL ───────────────────────────────── */
+.display-panel {
+  background: var(--display-bg);
+  border-radius: 3px;
+  border: 1.5px solid #0A0806;
+  padding: 4px 6px;
+  margin-bottom: 7px;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.8), 0 1px 0 rgba(255,255,255,0.1);
+}
+.dp-hdr {
+  font-size: 6px; font-weight: 700; letter-spacing: 2px;
+  color: var(--display-sub); text-transform: uppercase;
+  text-align: center; margin-bottom: 3px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  padding-bottom: 2px;
+}
+.dp-name-row {
+  display: flex; align-items: center; gap: 4px;
+  margin-bottom: 2px;
+}
+.dp-led {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: #383018; flex-shrink: 0;
+}
+.dp-led.on {
+  background: var(--amber);
+  box-shadow: 0 0 6px var(--amber-glow);
+}
+.dp-name {
+  flex: 1; font-family: 'Space Mono', monospace;
+  font-size: 11px; font-weight: 700;
+  color: var(--display-txt);
+  text-shadow: 0 0 8px rgba(208,160,32,0.5);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.dp-arrow {
+  font-size: 8px; color: var(--display-sub); cursor: pointer; flex-shrink: 0;
+}
+.dp-meta {
+  font-family: 'Space Mono', monospace;
+  font-size: 7px; color: var(--display-sub); letter-spacing: 1px;
+  text-align: center;
+}
+
+/* ─── KNOBS ROW ───────────────────────────────────── */
+.knobs-row {
+  display: flex; justify-content: space-between;
+  margin-bottom: 8px; padding: 0 2px;
+}
+.knob-wrap { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.knob {
+  width: 30px; height: 30px; border-radius: 50%; position: relative;
+  border: 2px solid var(--panel-dark);
+  box-shadow: 2px 2px 5px rgba(0,0,0,0.6), -0.5px -0.5px 1px rgba(255,255,255,0.2),
+    inset 0 1px 0 rgba(255,255,255,0.05);
+  cursor: pointer;
+}
+.knob.dk { background: radial-gradient(circle at 38% 33%, #3A3020, #080606); }
+.knob.tl { background: radial-gradient(circle at 38% 33%, #1C4838, #060E08); }
+.knob.cr { background: radial-gradient(circle at 38% 33%, #E0D4B0, #B0A480); }
+.knob.sm { width: 22px; height: 22px; }
+/* Indicator dot */
+.knob::after {
+  content: ''; position: absolute;
+  width: 3px; height: 3px; border-radius: 50%; border: 0.5px solid rgba(0,0,0,0.3);
+  left: 50%; transform: translateX(-50%); top: 4px;
+}
+.knob.dk::after, .knob.tl::after { background: rgba(255,255,255,0.75); }
+.knob.cr::after { background: rgba(40,30,16,0.8); }
+.knob-range { font-size: 6px; color: var(--txt-lo); letter-spacing: 0.5px; white-space: nowrap; }
+.knob-label { font-size: 7px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--txt-mid); }
+
+/* ─── PERFORMANCE BUTTONS ─────────────────────────── */
+.perf-row {
+  display: flex; gap: 5px;
+  margin-bottom: 7px;
+}
+.perf-btn-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.p-led { width: 5px; height: 5px; border-radius: 50%; background: #888070; border: 0.5px solid #686050; }
+.p-led.free-on { background: var(--green-led); box-shadow: 0 0 7px rgba(64,168,40,0.7); border-color: #288010; }
+.p-led.hold-on { background: var(--lc); border-color: var(--lc); }
+.strip.drums   .p-led.hold-on { box-shadow: 0 0 7px rgba(168,48,32,0.7); }
+.strip.bass    .p-led.hold-on { box-shadow: 0 0 7px rgba(40,72,152,0.7); }
+.strip.topline .p-led.hold-on { box-shadow: 0 0 7px rgba(24,104,120,0.7); }
+.strip.wild    .p-led.hold-on { box-shadow: 0 0 7px rgba(136,80,16,0.7); }
+
+.perf-btn {
+  width: 100%; padding: 7px 0;
+  text-align: center;
+  background: linear-gradient(180deg, #EAE0CA 0%, #D8CEB4 40%, #CCBEA0 100%);
+  border: 1.5px solid var(--btn-brd);
+  border-radius: 3px;
+  cursor: pointer;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase;
+  color: var(--txt-dark);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -1px 0 rgba(0,0,0,0.15);
+  transition: all 0.1s;
+}
+.perf-btn:hover { background: linear-gradient(180deg, #F0E6D0 0%, #E0D4B8 40%, #D4C8A8 100%); }
+.perf-btn.af {
+  background: linear-gradient(180deg, #E8C040 0%, #D0A020 40%, #C09010 100%);
+  border-color: #806010;
+  color: #1A1008;
+  box-shadow: 0 0 14px rgba(200,160,20,0.45), 0 2px 5px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.2), inset 0 -1px 0 rgba(0,0,0,0.2);
+}
+.perf-btn.ah {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--lc) 60%, #EAE0CA) 0%, color-mix(in srgb, var(--lc) 80%, #CCBEA0) 50%, var(--lc) 100%);
+  border-color: var(--lc);
+  color: #EEEAE0;
+  box-shadow: 0 0 14px var(--lc-dim, rgba(0,0,0,0.2)), 0 2px 5px rgba(0,0,0,0.5);
+}
+
+/* ─── VU METER ────────────────────────────────────── */
+.vu-section { margin-bottom: 6px; }
+.vu-svg { width: 100%; display: block; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5)); }
+
+/* ─── PAD GRID ────────────────────────────────────── */
+.pads-section { margin-bottom: 7px; }
+.pads-hdr {
+  display: flex; align-items: center; gap: 5px; margin-bottom: 4px;
+}
+.pads-lbl { font-size: 6px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--txt-lo); }
+.assign-pill {
+  display: flex; align-items: center; gap: 2px;
+  padding: 1px 5px; border-radius: 2px;
+  background: rgba(0,0,0,0.15);
+  border: 1px solid var(--panel-dark);
+}
+.ap-arr { font-size: 7px; color: var(--txt-mid); }
+.ap-txt { font-family: 'Space Mono', monospace; font-size: 7px; font-weight: 700; color: var(--amber); letter-spacing: 1px; }
+.pad-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 3px; }
+.pad {
+  height: 18px; border-radius: 2px;
+  background: linear-gradient(180deg, #BBAF98 0%, #A89C84 100%);
+  border: 1px solid var(--panel-dark);
+  cursor: pointer; position: relative;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+  transition: all 0.1s; overflow: hidden;
+}
+.pad:hover { background: linear-gradient(180deg, #CBC0A8 0%, #B8AC94 100%); }
+.pad.pa { background: linear-gradient(180deg, #D8C870 0%, #B8A040 100%); border-color: #806010; }
+.pad.pb { background: linear-gradient(180deg, #C8C0A0 0%, #A8A080 100%); border-color: #686040; }
+.pad.ft { border: 1.5px solid var(--amber); box-shadow: 0 0 6px var(--amber-glow), 0 1px 2px rgba(0,0,0,0.4); }
+.pad-n { font-family: 'Space Mono', monospace; font-size: 6px; font-weight: 700; color: var(--txt-mid); }
+.pad.pa .pad-n, .pad.ft .pad-n { color: #1A1008; }
+.pad-badge { position: absolute; top: 0; right: 1px; font-family: 'Space Mono', monospace; font-size: 6px; font-weight: 700; color: var(--amber); }
+.pad-pips { position: absolute; bottom: 1px; left: 1px; display: flex; gap: 1px; }
+.pp { width: 2px; height: 2px; border-radius: 50%; background: rgba(0,0,0,0.25); }
+.pp.on { background: var(--panel-dark); }
+.pad.pa .pp.on { background: rgba(0,0,0,0.5); }
+
+/* ─── BOTTOM ROW ──────────────────────────────────── */
+.bottom-row {
+  display: flex; align-items: center; gap: 6px;
+  margin-bottom: 6px;
+}
+.pan-wrap { display: flex; align-items: center; gap: 4px; }
+.pan-lbl { font-size: 7px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--txt-lo); }
+.range-pair { font-size: 6px; color: var(--txt-lo); letter-spacing: 0.5px; }
+.sm-btns { display: flex; gap: 3px; margin-left: auto; }
+.sm-btn {
+  width: 20px; height: 20px; border-radius: 2px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 8px; font-weight: 700; letter-spacing: 0.5px;
+  cursor: pointer;
+  background: linear-gradient(180deg, #D4CAB0 0%, #C0B498 100%);
+  border: 1.5px solid var(--btn-brd);
+  color: var(--txt-dark);
+  box-shadow: 0 1.5px 3px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.25);
+}
+.sm-btn.bypass-on {
+  background: linear-gradient(180deg, #E8C040 0%, #C89018 100%);
+  border-color: #806010; color: #1A1008;
+  box-shadow: 0 0 6px var(--amber-glow), 0 1.5px 3px rgba(0,0,0,0.4);
+}
+.sm-btn.bypassed {
+  background: linear-gradient(180deg, #C83020 0%, #A02010 100%);
+  border-color: #601008; color: #FFC0A8;
+  box-shadow: 0 0 6px rgba(200,48,32,0.4), 0 1.5px 3px rgba(0,0,0,0.4);
+}
+.strip.bypassed { opacity: 0.45; }
+.strip.bypassed .strip-right { opacity: 0.6; }
+
+/* ─── FADER SECTION ───────────────────────────────── */
+.fader-section { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; }
+.fader-inner { display: flex; align-items: stretch; height: 100%; gap: 0; }
+.fader-scale {
+  display: flex; flex-direction: column; justify-content: space-between;
+  padding: 2px 0; margin-right: 2px;
+  align-items: flex-end;
+}
+.fader-scale span { font-family: 'Space Mono', monospace; font-size: 6px; color: var(--txt-lo); letter-spacing: 0; }
+.fader-track-wrap { display: flex; flex-direction: column; align-items: center; flex: 1; }
+.fader-track {
+  width: 8px; flex: 1;
+  background: linear-gradient(180deg, #0E0C08 0%, #181410 100%);
+  border-radius: 4px;
+  border: 1px solid #0A0806;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.8), 0 0 0 0.5px rgba(255,255,255,0.08);
+  position: relative; cursor: ns-resize;
+  margin: 0 auto;
+}
+.fader-cap {
+  width: 36px; height: 14px;
+  background: linear-gradient(180deg,
+    rgba(255,255,255,0.2) 0%, #9A9080 15%,
+    #727060 50%, #585048 80%,
+    rgba(255,255,255,0.08) 100%);
+  border: 1.5px solid #686058;
+  border-radius: 2px;
+  position: absolute; left: 50%; transform: translateX(-50%);
+  box-shadow: 1.5px 2px 5px rgba(0,0,0,0.7), -0.5px -0.5px 1px rgba(255,255,255,0.15);
+  cursor: ns-resize;
+}
+.fader-cap::after {
+  content: ''; position: absolute;
+  top: 50%; left: 18%; right: 18%;
+  height: 1px; background: rgba(255,255,255,0.35);
+  transform: translateY(-50%);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.3);
+}
+.fader-lbl { font-size: 6px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--txt-lo); margin-top: 4px; }
+
+/* Right fader column */
+.strip-right .fader-track { width: 8px; }
+.strip-right .fader-section { width: 100%; display: flex; flex-direction: column; align-items: center; flex: 1; }
+.right-scale {
+  position: absolute; right: 4px; top: 34px; bottom: 30px;
+  display: flex; flex-direction: column; justify-content: space-between;
+}
+.right-scale span { font-family: 'Space Mono', monospace; font-size: 5.5px; color: var(--txt-lo); }
+
+/* ─── MASTER SECTION ──────────────────────────────── */
+.master {
+  width: 238px; flex-shrink: 0;
+  border-left: 1px solid var(--panel-dark);
+  display: flex; flex-direction: column;
+  padding: 10px 12px 10px;
+  gap: 7px;
+}
+.master-header {
+  display: flex; align-items: center; gap: 6px;
+  margin-bottom: 2px;
+}
+.master-title {
+  font-size: 14px; font-weight: 700; letter-spacing: 4px;
+  text-transform: uppercase; color: var(--txt-dark); flex: 1;
+}
+.master-body { display: flex; gap: 10px; flex: 1; }
+.master-left { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.master-right { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+
+/* master VU */
+.master-vu svg { width: 100%; display: block; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.5)); }
+
+/* master knobs */
+.m-knobs { display: flex; justify-content: space-between; }
+.m-knob-wrap { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.m-knob { width: 28px; height: 28px; }
+
+/* GLUE WARMTH LIMIT */
+.master-btns { display: flex; gap: 4px; }
+.master-btn {
+  flex: 1; padding: 5px 0; text-align: center;
+  background: linear-gradient(180deg, #EAE0CA 0%, #D4C8AA 100%);
+  border: 1.5px solid var(--btn-brd); border-radius: 2px;
+  font-size: 8px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--txt-dark); cursor: pointer;
+  box-shadow: 0 1.5px 4px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.3);
+  font-family: 'Barlow Condensed', sans-serif;
+}
+.master-btn.on {
+  background: linear-gradient(180deg, #E8C040 0%, #C89010 100%);
+  border-color: #806010; color: #1A1008;
+  box-shadow: 0 0 10px rgba(200,160,20,0.4), 0 1.5px 4px rgba(0,0,0,0.45);
+}
+
+/* stereo width */
+.sw-row { display: flex; align-items: center; gap: 6px; }
+.sw-label { font-size: 7px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--txt-lo); }
+.sw-range { display: flex; justify-content: space-between; }
+.sw-range span { font-size: 6px; color: var(--txt-lo); }
+
+/* master fader section */
+.master-fader { display: flex; gap: 5px; flex: 1; align-items: stretch; }
+.m-fader-scale { display: flex; flex-direction: column; justify-content: space-between; align-items: flex-end; }
+.m-fader-scale span { font-family: 'Space Mono', monospace; font-size: 6px; color: var(--txt-lo); }
+.m-fader-track {
+  width: 10px;
+  background: linear-gradient(180deg, #0E0C08, #181410);
+  border-radius: 5px; border: 1px solid #0A0806;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.8);
+  position: relative; cursor: ns-resize; flex: 1;
+}
+.m-fader-cap {
+  width: 42px; height: 16px;
+  background: linear-gradient(180deg,
+    rgba(255,255,255,0.22) 0%, #9E9488 12%,
+    #767060 50%, #5A5448 80%,
+    rgba(255,255,255,0.1) 100%);
+  border: 1.5px solid #686058; border-radius: 2px;
+  position: absolute; left: 50%; transform: translateX(-50%);
+  box-shadow: 2px 2px 6px rgba(0,0,0,0.7), -0.5px -0.5px 1px rgba(255,255,255,0.15);
+}
+.m-fader-cap::after {
+  content: ''; position: absolute;
+  top: 50%; left: 18%; right: 18%;
+  height: 1px; background: rgba(255,255,255,0.4);
+  transform: translateY(-50%);
+}
+
+/* logo badge */
+.logo-badge {
+  background: linear-gradient(135deg, #1C1810 0%, #0E0C08 100%);
+  border: 1.5px solid #3A3428;
+  border-radius: 4px;
+  padding: 7px 10px;
+  display: flex; flex-direction: column;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.7), 0 1px 0 rgba(255,255,255,0.08);
+}
+.lb-title {
+  font-family: 'Space Mono', monospace;
+  font-size: 13px; font-weight: 700; letter-spacing: 3px;
+  color: #C8A030;
+  text-shadow: 0 0 12px rgba(200,160,48,0.5);
+  font-style: italic;
+}
+.lb-sub { font-size: 7px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: #686048; margin-top: 1px; }
+.lb-led { width: 7px; height: 7px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 8px var(--amber-glow); margin-top: 5px; align-self: flex-start; }
+
+/* key/bpm display */
+.kbpm-row { display: flex; gap: 5px; }
+.seg-d {
+  display: flex; align-items: center; gap: 4px; flex: 1;
+  padding: 3px 7px; border-radius: 2px;
+  background: var(--display-bg);
+  border: 1px solid #0A0806;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.7);
+}
+.seg-l { font-size: 6px; font-weight: 700; letter-spacing: 2px; color: var(--display-sub); text-transform: uppercase; }
+.seg-v { font-family: 'Space Mono', monospace; font-size: 12px; font-weight: 700; color: var(--display-txt); text-shadow: 0 0 8px rgba(208,160,32,0.6); }
+.sync-d { width: 4px; height: 4px; border-radius: 50%; background: var(--green-led); box-shadow: 0 0 5px rgba(64,168,40,0.7); animation: blink 1.8s ease-in-out infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+.scenes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
+.sc {
+  height: 26px; border-radius: 2px;
+  background: linear-gradient(180deg, #BBAF98 0%, #A89C84 100%);
+  border: 1px solid var(--btn-brd);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 1px; cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+}
+.sc.on {
+  background: linear-gradient(180deg, #E0C038 0%, #B89010 100%);
+  border-color: #806010;
+  box-shadow: 0 0 8px rgba(200,160,20,0.4), 0 1px 3px rgba(0,0,0,0.4);
+}
+.sc-n { font-family: 'Space Mono', monospace; font-size: 9px; font-weight: 700; color: var(--txt-lo); }
+.sc.on .sc-n { color: #1A1008; }
+.sc-t { font-size: 5.5px; color: var(--txt-lo); letter-spacing: 0.4px; }
+.sc.on .sc-t { color: rgba(26,16,8,0.6); }
+.disc-btn {
+  padding: 5px; border-radius: 2px;
+  background: linear-gradient(180deg, #C8BCA4 0%, #B0A48E 100%);
+  border: 1px solid var(--panel-dark);
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;
+  font-size: 8px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--txt-mid);
+  box-shadow: 0 1.5px 3px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+  font-family: 'Barlow Condensed', sans-serif;
+  transition: all 0.12s;
+}
+.disc-btn:hover { background: linear-gradient(180deg, #D4C8B0 0%, #BCAE98 100%); }
+
+/* ─── KEY ASSIGNMENT PANEL ──────────────────────────── */
+.key-panel { position:relative; z-index:1; border-top:2px solid #5A5040; }
+.kap-header {
+  display:flex; align-items:center; gap:10px;
+  padding:5px 20px 4px;
+  background:linear-gradient(0deg,#0E0C09 0%,#161410 100%);
+  border-bottom:1px solid #2A2418;
+}
+.kap-title { font-size:7px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:#686050; flex:1; }
+.map-btn {
+  display:flex; align-items:center; gap:5px; padding:3px 10px; border-radius:3px;
+  background:#161410; border:1px solid #2A2418; cursor:pointer;
+  font-family:'Barlow Condensed',sans-serif; font-size:7px; font-weight:700;
+  letter-spacing:2px; text-transform:uppercase; color:#686050;
+  box-shadow:inset 0 1px 2px rgba(0,0,0,0.5); transition:all 0.15s;
+}
+.map-btn.active { background:rgba(200,100,16,0.08); border-color:rgba(200,100,16,0.4); color:#C06010; box-shadow:0 0 6px rgba(200,100,16,0.15),inset 0 1px 2px rgba(0,0,0,0.4); }
+.map-led { width:5px; height:5px; border-radius:50%; background:#383028; }
+.map-btn.active .map-led { background:#C06010; box-shadow:0 0 5px #C06010; }
+/* Panel Strip */
+.kap-strip { display:flex; padding:7px 14px 7px; background:linear-gradient(180deg,#141210 0%,#0E0C08 100%); }
+.ps-zone {
+  flex:1; display:flex; flex-direction:column; align-items:flex-start;
+  padding:7px 10px 6px; border-right:1px solid #201E18; position:relative; min-width:0;
+}
+.ps-zone:last-child { border-right:none; }
+.ps-zone::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:var(--zc); box-shadow:0 0 6px var(--zc); opacity:0.55; }
+.ps-zone.z-sc  { --zc:#5EC86C; --zr:94,200,108;  flex:1.7; }
+.ps-zone.z-dr  { --zc:#C03838; --zr:192,56,56;  }
+.ps-zone.z-ba  { --zc:#5838C0; --zr:88,56,192;  }
+.ps-zone.z-tl  { --zc:#1A8898; --zr:26,136,152; }
+.ps-zone.z-wc  { --zc:#B87010; --zr:184,112,16; }
+.ps-zone.z-fi  { --zc:#C85010; --zr:200,80,16;  flex:0.85; }
+.ps-zone.z-tr  { --zc:#3078B0; --zr:48,120,176; flex:0.85; }
+.ps-ch { font-family:'Space Mono',monospace; font-size:8px; font-weight:700; color:var(--zc); opacity:0.65; letter-spacing:1px; margin-bottom:1px; text-shadow:0 0 6px var(--zc); }
+.ps-nm { font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#D8CCAA; margin-bottom:1px; white-space:nowrap; }
+.ps-sb { font-size:6px; letter-spacing:1.5px; text-transform:uppercase; color:#504840; margin-bottom:7px; }
+.ps-trigs { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:4px; }
+.ps-sgrid { display:grid; grid-template-columns:repeat(4,1fr); gap:3px; margin-bottom:4px; }
+.ps-t {
+  width:28px; height:26px; border-radius:2px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:2px; cursor:pointer; position:relative;
+  background:linear-gradient(180deg,#1C1A12 0%,#141210 100%);
+  border:1px solid #282418; box-shadow:inset 0 1px 2px rgba(0,0,0,0.5); transition:all 0.1s;
+}
+.ps-t.loaded { background:linear-gradient(180deg,rgba(var(--zr),0.1) 0%,rgba(var(--zr),0.05) 100%); border-color:rgba(var(--zr),0.3); }
+.ps-t.playing { background:linear-gradient(180deg,rgba(var(--zr),0.22) 0%,rgba(var(--zr),0.12) 100%); border-color:var(--zc); box-shadow:0 0 8px rgba(var(--zr),0.3),inset 0 1px 0 rgba(255,255,255,0.04); }
+.ps-dot { width:4px; height:4px; border-radius:50%; background:#282420; }
+.ps-t.loaded  .ps-dot { background:var(--zc); opacity:0.5; }
+.ps-t.playing .ps-dot { background:var(--zc); opacity:1; box-shadow:0 0 5px var(--zc); animation:blink 1.2s ease-in-out infinite; }
+.ps-lbl { font-family:'Space Mono',monospace; font-size:8px; font-weight:700; color:#504840; line-height:1; }
+.ps-t.loaded  .ps-lbl { color:#908070; }
+.ps-t.playing .ps-lbl { color:#D8CCAA; text-shadow:0 0 5px var(--zc); }
+.ps-m { position:absolute; top:1px; right:1px; font-size:5px; font-weight:700; letter-spacing:0.5px; padding:0 2px; border-radius:1px; line-height:1.5; }
+.ps-m.f { color:#40B858; background:rgba(64,184,88,0.2); }
+.ps-m.h { color:var(--zc); background:rgba(0,0,0,0.3); }
+.ps-rng { font-family:'Space Mono',monospace; font-size:6px; color:#504840; letter-spacing:1px; }
+/* Matrix View */
+.kap-matrix { padding:10px 14px 8px; background:linear-gradient(180deg,#141210 0%,#0E0C08 100%); }
+.kap-matrix table { width:100%; border-collapse:collapse; }
+.kap-matrix th { padding:4px 8px; font-size:7px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#504840; text-align:left; border-bottom:1px solid #201E18; white-space:nowrap; }
+.kap-matrix td { padding:6px 8px; border-bottom:1px solid rgba(255,255,255,0.03); vertical-align:middle; }
+.kap-matrix tr:last-child td { border-bottom:none; }
+.th-fn,.td-fn { width:175px; border-right:1px solid #201E18 !important; }
+.th-k,.td-k  { width:62px; text-align:center; }
+.th-nr,.td-nr { width:55px; text-align:center; font-family:'Space Mono',monospace; font-size:7px; color:#504840; letter-spacing:1px; }
+.th-mo,.td-mo { width:95px; text-align:center; }
+.th-sp,.td-sp { width:6px; padding:0; background:rgba(0,0,0,0.25); }
+.fn-r  { display:flex; align-items:center; gap:7px; }
+.fn-bar { width:3px; height:24px; border-radius:1px; flex-shrink:0; }
+.fn-nm { font-size:10px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:#D8CCAA; }
+.fn-sb { font-size:6px; letter-spacing:1px; color:#504840; margin-top:1px; }
+.kc { display:inline-flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; min-width:42px; padding:4px 5px; border-radius:2px; border:1px solid transparent; background:transparent; }
+.kc.asgn { background:rgba(var(--mr),0.08); border-color:rgba(var(--mr),0.3); }
+.kc.play { background:rgba(var(--mr),0.16); border-color:rgba(var(--mr),0.7); box-shadow:0 0 7px rgba(var(--mr),0.15); }
+.kc-s { font-family:'Space Mono',monospace; font-size:10px; font-weight:700; color:rgba(var(--mr),1); }
+.kc-n { font-size:6px; letter-spacing:1px; color:#504840; font-family:'Space Mono',monospace; }
+.kc-d { width:4px; height:4px; border-radius:50%; background:rgba(var(--mr),0.4); }
+.kc.play .kc-d { background:rgba(var(--mr),1); box-shadow:0 0 5px rgba(var(--mr),0.8); animation:blink 1.2s ease-in-out infinite; }
+.mc-row { display:flex; gap:3px; justify-content:center; }
+.mc { padding:2px 5px; border-radius:2px; font-size:6px; font-weight:700; letter-spacing:1px; text-transform:uppercase; }
+.mc.free { background:rgba(64,184,88,0.1); border:1px solid rgba(64,184,88,0.3); color:#40B858; }
+.mc.hold { background:rgba(var(--mr),0.1); border:1px solid rgba(var(--mr),0.3); color:rgba(var(--mr),1); }
+.mc.trig { background:rgba(255,255,255,0.03); border:1px solid #282418; color:#504840; }
+tr.mr-sc { --mr:94,200,108; } tr.mr-dr { --mr:192,56,56;  }
+tr.mr-ba { --mr:88,56,192;  } tr.mr-tl { --mr:26,136,152; }
+tr.mr-wc { --mr:184,112,16; } tr.mr-fi { --mr:200,80,16;  } tr.mr-tr { --mr:48,120,176; }
+.mat-hdr td { padding:3px 8px; font-size:6px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:#504840; background:rgba(0,0,0,0.3); border-top:1px solid #201E18; border-bottom:1px solid #201E18; }
+.hidden { display:none !important; }
+</style>
+</head>
+<body>
+<div class="instrument">
+
+<!-- WOOD L -->
+<div class="wood"></div>
+
+<!-- ═══════════════ DRUMS ════════════════════════════ -->
+<div class="strip drums">
+  <div class="strip-left">
+
+    <div class="ch-header">
+      <div class="screw"></div>
+      <span class="ch-num">1</span>
+      <span class="ch-name">Drums</span>
+      <div class="screw"></div>
+    </div>
+
+    <div class="slot-tabs">
+      <div class="st active">A</div>
+      <div class="st">B</div>
+      <div class="st">C</div>
+      <div class="slot-leds">
+        <div class="st-led on"></div>
+        <div class="st-led on"></div>
+        <div class="st-led"></div>
+      </div>
+    </div>
+
+    <div class="display-panel">
+      <div class="dp-hdr">LOOP / PHRASE</div>
+      <div class="dp-name-row">
+        <div class="dp-led on"></div>
+        <div class="dp-name">Ghost Hits</div>
+        <div class="dp-arrow">▾</div>
+      </div>
+      <div class="dp-meta">92 BPM &nbsp;|&nbsp; 4 Bars</div>
+    </div>
+
+    <div class="knobs-row">
+      <div class="knob-wrap">
+        <div class="knob dk"></div>
+        <div class="knob-range">DARK — BRIGHT</div>
+        <div class="knob-label">TONE</div>
+      </div>
+      <div class="knob-wrap">
+        <div class="knob tl"></div>
+        <div class="knob-range">LP — HP</div>
+        <div class="knob-label">FILTER</div>
+      </div>
+      <div class="knob-wrap">
+        <div class="knob cr"></div>
+        <div class="knob-range">1 — 8</div>
+        <div class="knob-label">VARIATION</div>
+      </div>
+    </div>
+
+    <div class="perf-row">
+      <div class="perf-btn-wrap">
+        <div class="p-led free-on"></div>
+        <div class="perf-btn af">FREE</div>
+      </div>
+      <div class="perf-btn-wrap">
+        <div class="p-led"></div>
+        <div class="perf-btn">HOLD</div>
+      </div>
+    </div>
+
+    <div class="vu-section">
+      <svg class="vu-svg" viewBox="0 0 156 52" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="vf" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#E0D080"/><stop offset="100%" stop-color="#C4B460"/>
+          </linearGradient>
+        </defs>
+        <rect width="156" height="52" rx="3" fill="#1A1808" stroke="#080602" stroke-width="1"/>
+        <rect x="2.5" y="2.5" width="151" height="47" rx="2" fill="url(#vf)"/>
+        <rect x="113" y="2.5" width="40.5" height="27" rx="0" fill="rgba(180,28,16,0.1)"/>
+        <path d="M 18 47 A 60 48 0 0 1 138 47" fill="none" stroke="rgba(0,0,0,0.12)" stroke-width="1"/>
+        <!-- ticks -->
+        <line x1="21" y1="38" x2="24" y2="34" stroke="#3A3010" stroke-width="0.8"/>
+        <line x1="40" y1="22" x2="44" y2="19" stroke="#3A3010" stroke-width="0.8"/>
+        <line x1="58" y1="13" x2="62" y2="11" stroke="#3A3010" stroke-width="0.8"/>
+        <line x1="72" y1="10" x2="76" y2="8" stroke="#3A3010" stroke-width="0.8"/>
+        <line x1="88" y1="9" x2="92" y2="8" stroke="#3A3010" stroke-width="0.8"/>
+        <line x1="103" y1="11" x2="107" y2="10" stroke="#3A3010" stroke-width="0.8"/>
+        <line x1="117" y1="17" x2="121" y2="15" stroke="#8A2010" stroke-width="1"/>
+        <!-- labels -->
+        <text x="5" y="46" font-size="6.5" fill="#5A4A10" font-family="Arial" font-weight="600">-20</text>
+        <text x="27" y="31" font-size="6.5" fill="#5A4A10" font-family="Arial" font-weight="600">-10</text>
+        <text x="47" y="19" font-size="6.5" fill="#5A4A10" font-family="Arial" font-weight="600">-7</text>
+        <text x="64" y="14" font-size="6.5" fill="#5A4A10" font-family="Arial" font-weight="600">-5</text>
+        <text x="84" y="13" font-size="6.5" fill="#5A4A10" font-family="Arial" font-weight="600">-3</text>
+        <text x="101" y="16" font-size="6.5" fill="#5A4A10" font-family="Arial" font-weight="600">0</text>
+        <text x="119" y="25" font-size="6.5" fill="#902010" font-family="Arial" font-weight="700">+3</text>
+        <!-- needle: +1dB approx angle 23° from center → tip ~(96,15) -->
+        <line x1="78" y1="48" x2="96" y2="15" stroke="#1A1008" stroke-width="1.6"/>
+        <circle cx="78" cy="48" r="2.5" fill="#2A1A08"/>
+        <text x="120" y="46" font-size="9" fill="#5A4A10" font-family="Arial" font-weight="700" font-style="italic">VU</text>
+      </svg>
+    </div>
+
+    <div class="pads-section">
+      <div class="pads-hdr">
+        <span class="pads-lbl">Loops</span>
+        <div class="assign-pill"><span class="ap-arr">→</span><span class="ap-txt">SLOT B</span></div>
+      </div>
+      <div class="pad-grid">
+        <div class="pad pa"><div class="pad-pips"><div class="pp on"></div><div class="pp on"></div><div class="pp"></div><div class="pp"></div><div class="pp"></div></div><span class="pad-n">01</span><span class="pad-badge">A</span></div>
+        <div class="pad pb ft"><div class="pad-pips"><div class="pp on"></div><div class="pp on"></div><div class="pp on"></div><div class="pp"></div><div class="pp"></div></div><span class="pad-n">02</span><span class="pad-badge">B</span></div>
+        <div class="pad"><div class="pad-pips"><div class="pp on"></div><div class="pp on"></div><div class="pp"></div><div class="pp"></div><div class="pp"></div></div><span class="pad-n">03</span></div>
+        <div class="pad"><div class="pad-pips"><div class="pp on"></div><div class="pp on"></div><div class="pp on"></div><div class="pp on"></div><div class="pp"></div></div><span class="pad-n">04</span></div>
+        <div class="pad"><div class="pad-pips"><div class="pp on"></div><div class="pp"></div><div class="pp"></div><div class="pp"></div><div class="pp"></div></div><span class="pad-n">05</span></div>
+        <div class="pad"><div class="pad-pips"><div class="pp on"></div><div class="pp on"></div><div class="pp on"></div><div class="pp"></div><div class="pp"></div></div><span class="pad-n">06</span></div>
+        <div class="pad"><div class="pad-pips"><div class="pp on"></div><div class="pp on"></div><div class="pp on"></div><div class="pp on"></div><div class="pp"></div></div><span class="pad-n">07</span></div>
+        <div class="pad"><div class="pad-pips"><div class="pp on"></div><div class="pp on"></div><div class="pp on"></div><div class="pp on"></div><div class="pp on"></div></div><span class="pad-n">08</span></div>
+      </div>
+    </div>
+
+    <div class="bottom-row">
+      <div class="pan-wrap">
+        <div class="knob dk sm"></div>
+        <div>
+          <div class="pan-lbl">PAN</div>
+          <div class="range-pair">L &nbsp;&nbsp; R</div>
+        </div>
+      </div>
+      <div class="sm-btns">
+        <div class="sm-btn bypass-on">S</div>
+        <div class="sm-btn">M</div>
+      </div>
+    </div>
+
+    <div class="fader-section">
+      <div class="fader-inner">
+        <div class="fader-scale">
+          <span>10</span><span>5</span><span>0</span><span>-5</span><span>-10</span><span>-20</span><span>-30</span><span>-∞</span>
+        </div>
+        <div class="fader-track-wrap">
+          <div class="fader-track" style="height:100%;">
+            <div class="fader-cap" style="top:40%;"></div>
+          </div>
+          <div class="fader-lbl">VOL</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end strip-left -->
+</div><!-- end DRUMS -->
+
+
+<!-- ═══════════════ BASS ══════════════════════════════ -->
+<div class="strip bass">
+  <div class="strip-left">
+
+    <div class="ch-header">
+      <div class="screw"></div>
+      <span class="ch-num">2</span>
+      <span class="ch-name">Bass</span>
+      <div class="screw"></div>
+    </div>
+
+    <div class="slot-tabs">
+      <div class="st">A</div>
+      <div class="st active">B</div>
+      <div class="st">C</div>
+      <div class="slot-leds">
+        <div class="st-led on"></div>
+        <div class="st-led on"></div>
+        <div class="st-led"></div>
+      </div>
+    </div>
+
+    <div class="display-panel">
+      <div class="dp-hdr">LOOP / PHRASE</div>
+      <div class="dp-name-row">
+        <div class="dp-led on"></div>
+        <div class="dp-name">Drone Pad</div>
+        <div class="dp-arrow">▾</div>
+      </div>
+      <div class="dp-meta">92 BPM &nbsp;|&nbsp; 4 Bars</div>
+    </div>
+
+    <div class="knobs-row">
+      <div class="knob-wrap"><div class="knob dk"></div><div class="knob-range">DARK — BRIGHT</div><div class="knob-label">TONE</div></div>
+      <div class="knob-wrap"><div class="knob tl"></div><div class="knob-range">LP — HP</div><div class="knob-label">FILTER</div></div>
+      <div class="knob-wrap"><div class="knob cr"></div><div class="knob-range">1 — 8</div><div class="knob-label">VARIATION</div></div>
+    </div>
+
+    <div class="perf-row">
+      <div class="perf-btn-wrap">
+        <div class="p-led free-on"></div>
+        <div class="perf-btn af">FREE</div>
+      </div>
+      <div class="perf-btn-wrap">
+        <div class="p-led"></div>
+        <div class="perf-btn">HOLD</div>
+      </div>
+    </div>
+
+    <div class="vu-section">
+      <svg class="vu-svg" viewBox="0 0 156 52" xmlns="http://www.w3.org/2000/svg">
+        <rect width="156" height="52" rx="3" fill="#1A1808" stroke="#080602" stroke-width="1"/>
+        <rect x="2.5" y="2.5" width="151" height="47" rx="2" fill="url(#vf)"/>
+        <rect x="113" y="2.5" width="40.5" height="27" rx="0" fill="rgba(180,28,16,0.1)"/>
+        <path d="M 18 47 A 60 48 0 0 1 138 47" fill="none" stroke="rgba(0,0,0,0.12)" stroke-width="1"/>
+        <line x1="21" y1="38" x2="24" y2="34" stroke="#3A3010" stroke-width="0.8"/>
+        <line x1="40" y1="22" x2="44" y2="19" stroke="#3A3010" stroke-width="0.8"/>
+        <line x1="58" y1="13" x2="62" y2="11" stroke="#3A3010" stroke-width="0.8"/>
+        <line x1="72" y1="10" x2="76" y2="8" stroke="#3A3010" stroke-width="0.8"/>
+        <line x1="88" y1="9" x2="92" y2="8" stroke="#3A3010" stroke-width="0.8"/>
+        <line x1="103" y1="11" x2="107" y2="10" stroke="#3A3010" stroke-width="0.8"/>
+        <line x1="117" y1="17" x2="121" y2="15" stroke="#8A2010" stroke-width="1"/>
+        <text x="5" y="46" font-size="6.5" fill="#5A4A10" font-family="Arial" font-weight="600">-20</text>
+        <text x="27" y="31" font-size="6.5" fill="#5A4A10" font-family="Arial" font-weight="600">-10</text>
+        <text x="47" y="19" font-size="6.5" fill="#5A4A10" font-family="Arial" font-weight="600">-7</text>
+        <text x="64" y="14" font-size="6.5" fill="#5A4A10" font-family="Arial" font-weight="600">-5</text>
+        <text x="84" y="13" font-size="6.5" fill="#5A4A10" font-family="Arial" font-weight="600">-3</text>
+        <text x="101" y="16" font-size="6.5" fill="#5A4A10" font-family="Arial" font-weight="600">0</text>
+        <text x="119" y="25" font-size="6.5" fill="#902010" font-family="Arial" font-weight="700">+3</text>
+        <!-- needle: -5dB → tip ~(73,11) -->
+        <line x1="78" y1="48" x2="74" y2="11" stroke="#1A1008" stroke-width="1.6"/>
+        <circle cx="78" cy="48" r="2.5" fill="#2A1A08"/>
+        <text x="120" y="46" font-size="9" fill="#5A4A10" font-family="Arial" font-weight="700" font-style="italic">VU</text>
+      </svg>
+    </div>
+
+    <div class="pads-section">
+      <div class="pads-hdr">
+        <span class="pads-lbl">Loops</span>
+        <div class="assign-pill"><span class="ap-arr">→</span><span class="ap-txt">SLOT C</span></div>
+      </div>
+      <div class="pad-grid">
+        <div class="pad"><div class="pad-pips"><div class="pp on"></div><div class="pp on"></div><div class="pp"></div><div class="pp"></div><div class="pp"></div></div><span class="pad-n">01</span></div>
+        <div class="pad pa"><div class="pad-pips"><div class="pp on"></div><div class="pp on"></div><div class="pp on"></div><div class="pp"></div><div class="pp"></div></div><span class="pad-n">02</span><span class="pad-badge">A</span></div>
+        <div class="pad"><div class="pad-pips"><div class="pp on"></div><div class="pp on"></div><div class="pp on"></div><div class="pp on"></div><div class="pp"></div></div><span class="pad-n">03</span></div>
+        <div class="pad"><div class="pad-pips"><div class="pp on"></div><div class="pp on"></div><div class="pp on"></div><div class="pp on"></div><div class="pp on"></div></div><span class="pad-n">04</span></div>
+        <div class="pad ft"><div class="pad-pips"><div class="pp on"></div><div class="pp"></div><div class="pp"></div><div class="pp"></div><div class="pp"></div></div><span class="pad-n">05</span></div>
+        <div class="pad pb"><div class="pad-pips"><div class="pp on"></div><div class="pp on"></div><div class="pp"></div><div class="pp"></div><div class="pp"></div></div><span class="pad-n">06</span><span class="pad-badge">B</span></div>
+        <div class="pad"><div class="pad-pips"><div class="pp on"></div><div class="pp on"></div><div class="pp on"></div><div class="pp"></div><div class="pp"></div></div><span class="pad-n">07</span></div>
+        <div class="pad"><div class="pad-pips"><div class="pp on"></div><div class="pp on"></div><div class="pp on"></div><div class="pp on"></div><div class="pp"></div></div><span class="pad-n">08</span></div>
+      </div>
+    </div>
+
+    <div class="bottom-row">
+      <div class="pan-wrap">
+        <div class="knob dk sm"></div>
+        <div><div class="pan-lbl">PAN</div><div class="range-pair">L &nbsp;&nbsp; R</div></div>
+      </div>
+      <div class="sm-btns">
+        <div class="sm-btn bypass-on">S</div>
+        <div class="sm-btn">M</div>
+      </div>
+    </div>
+
+    <div class="fader-section">
+      <div class="fader-inner">
+        <div class="fader-scale">
+          <span>10</span><span>5</span><span>0</span><span>-5</span><span>-10</span><span>-20</span><span>-30</span><span>-∞</span>
+        </div>
+        <div class="fader-track-wrap">
+          <div class="fader-track" style="height:100%;">
+            <div class="fader-cap" style="top:35%;"></div>
+          </div>
+          <div class="fader-lbl">VOL</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div><!-- end BASS -->
+
+
+<!-- ═══════════════ MELODY ════════════════════════════ -->
+<div class="strip topline">
+  <div class="strip-left">
+
+    <div class="ch-header">
+      <div class="screw"></div>
+      <span class="ch-num">3</span>
+      <span class="ch-name">Melody</span>
+      <div class="screw"></div>
+    </div>
+
+    <div class="slot-tabs">
+      <div class="st active">A</div>
+      <div class="st">B</div>
+      <div class="st">C</div>
+      <div class="slot-leds">
+        <div class="st-led on"></div>
+        <div class="st-led"></div>
+        <div class="st-led"></div>
+      </div>
+    </div>
+
+    <div class="display-panel">
+      <div class="dp-hdr">LOOP / PHRASE</div>
+      <div class="dp-name-row">
+        <div class="dp-led on"></div>
+        <div class="dp-name">Trem Strings</div>
+        <div class="dp-arrow">▾</div>
+      </div>
+      <div class="dp-meta">92 BPM &nbsp;|&nbsp; 4 Bars</div>
+    </div>
+
+    <div class="knobs-row">
+      <div class="knob-wrap"><div class="knob dk"></div><div class="knob-range">DARK — BRIGHT</div><div class="knob-label">TONE</div></div>
+      <div class="knob-wrap"><div class="knob tl"></div><div class="knob-range">LP — HP</div><div class="knob-label">FILTER</div></div>
+      <div class="knob-wrap"><div class="knob cr"></div><div class="knob-range">1 — 8</div><div class="knob-label">VARIATION</div></div>
+    </div>
+
+    <div class="perf-row">
+      <div class="perf-btn-wrap">
+        <div class="p-led free-on"></div>
+        <div class="perf-btn af">FREE</div>
+      </div>
+      <div class="perf-btn-wrap">
+        <div class="p-led"></div>
+        <div class="perf-btn">HOLD</div>
+      </div>
+    </div>
+
+    <div class="vu-section">
+      <svg class="vu-svg" viewBox="0 0 156 52" xmlns="http://www.w3.org/2000/svg">
+        <rect width="156" height="52" rx="3" fill="#1A1808" stroke="#080602" stroke-width="1"/>
+        <rect x="2.5" y="2.5" width="151" height="47" rx="2" fill="url(#vf)"/>
+        <rect x="113" y="2.5" width="40.5" height="27" rx="0" fill="rgba(180,28,16,0.1)"/>
+        <path d="M 18 47 A 60 48 0 0 1 138 47" fill="none" stroke="rgba(0,0,0,0.12)" stroke-width="1"/>
+        <line x1="21" y1="38" x2="24" y2="34" stroke="#3A3010" stroke-width="0.8"/>
+        <line x1="40" y1="22" x2="44" y2="19" stroke="#3A3010" stroke-width="0.8"/>
+        <line x1="58" y1="13" x2="62" y2="11" stroke="#3A3010" stroke-width="0.8"/>
+        <line x1="72" y1="10" x2="76" y2="8" stroke="#3A3010" stroke-width="0.8"/>
+        <line x1="88" y1="9" x2="92" y2="8" stroke="#3A3010" stroke-width="0.8"/>
+        <line x1="103" y1="11" x2="107" y2="10" stroke="#3A3010" stroke-width="0.8"/>
+        <line x1="117" y1="17" x2="121" y2="15" stroke="#8A2010" stroke-width="1"/>
+        <text x="5" y="46" font-size="6.5" fill="#5A4A10" font-family="Arial" font-weight="600">-20</text>
+        <text x="27" y="31" font-size="6.5" fill="#5A4A10" font-family="Arial" font-weight="600">-10</text>
+        <text x="47" y="19" font-size="6.5" fill="#5A4A10" font-family="Arial" font-weight="600">-7</text>
+        <text x="64" y="14" font-size="6.5" fill="#5A4A10" font-family="Arial" font-weight="600">-5</text>
+        <text x="84" y="13" font-size="6.5" fill="#5A4A10" font-family="Arial" font-weight="600">-3</text>
+        <text x="101" y="16" font-size="6.5" fill="#5A4A10" font-family="Arial" font-weight="600">0</text>
+        <text x="119" y="25" font-size="6.5" fill="#902010" font-family="Arial" font-weight="700">+3</text>
+        <!-- needle: -10dB → tip ~(62,16) -->
+        <line x1="78" y1="48" x2="62" y2="16" stroke="#1A1008" stroke-width="1.6"/>
+        <circle cx="78" cy="48" r="2.5" fill="#2A1A08"/>
+        <text x="120" y="46" font-size="9" fill="#5A4A10" font-family="Arial" font-weight="700" font-style="italic">VU</text>
+      </svg>
+    </div>
+
+    <div class="pads-section">
+      <div class="pads-hdr">
+        <span class="pads-lbl">Loops</span>
+        <div class="assign-pill"><span class="ap-arr">→</span><span class="ap-txt">SLOT B</span></div>
+      </div>
+      <div class="pad-grid">
+        <div class="pad"><div class="pad-pips"><div class="pp on"></div><div class="pp"></div><div class="pp"></div><div class="pp"></div><div class="pp"></div></div><span class="pad-n">01</span></div>
+        <div class="pad"><div class="pad-pips"><div class="pp on"></div><div class="pp on"></div><div class="pp"></div><div class="pp"></div><div class="pp"></div></div><span class="pad-n">02</span></div>
+        <div class="pad pa ft"><div class="pad-pips"><div class="pp on"></div><div class="pp on"></div><div class="pp on"></div><div class="pp"></div><div class="pp"></div></div><span class="pad-n">03</span><span class="pad-badge">A</span></div>
+        <div class="pad"><div class="pad-pips"><div class="pp on"></div><div class="pp on"></div><div class="pp on"></div><div class="pp on"></div><div class="pp"></div></div><span class="pad-n">04</span></div>
+        <div class="pad"><div class="pad-pips"><div class="pp on"></div><div class="pp on"></div><div class="pp on"></div><div class="pp on"></div><div class="pp on"></div></div><span class="pad-n">05</span></div>
+        <div class="pad"><div class="pad-pips"><div class="pp on"></div><div class="pp"></div><div class="pp"></div><div class="pp"></div><div class="pp"></div></div><span class="pad-n">06</span></div>
+        <div class="pad"><div class="pad-pips"><div class="pp on"></div><div class="pp on"></div><div class="pp on"></div><div class="pp"></div><div class="pp"></div></div><span class="pad-n">07</span></div>
+        <div class="pad"><div class="pad-pips"><div class="pp on"></div><div class="pp on"></div><div class="pp on"></div><div class="pp on"></div><div class="pp"></div></div><span class="pad-n">08</span></div>
+      </div>
+    </div>
+
+    <div class="bottom-row">
+      <div class="pan-wrap">
+        <div class="knob dk sm"></div>
+        <div><div class="pan-lbl">PAN</div><div class="range-pair">L &nbsp;&nbsp; R</div></div>
+      </div>
+      <div class="sm-btns">
+        <div class="sm-btn bypass-on">S</div>
+        <div class="sm-btn">M</div>
+      </div>
+    </div>
+
+    <div class="fader-section">
+      <div class="fader-inner">
+        <div class="fader-scale">
+          <span>10</span><span>5</span><span>0</span><span>-5</span><span>-10</span><span>-20</span><span>-30</span><span>-∞</span>
+        </div>
+        <div class="fader-track-wrap">
+          <div class="fader-track" style="height:100%;">
+            <div class="fader-cap" style="top:47%;"></div>
+          </div>
+          <div class="fader-lbl">VOL</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div><!-- end MELODY -->
+
+
+<!-- ═══════════════ WILDCARD (bypassed) ══════════════ -->
+<div class="strip wild bypassed">
+  <div class="strip-left">
+
+    <div class="ch-header">
+      <div class="screw"></div>
+      <span class="ch-num">4</span>
+      <span class="ch-name">Wildcard</span>
+      <div class="screw"></div>
+    </div>
+
+    <div class="slot-tabs">
+      <div class="st active">A</div>
+      <div class="st">B</div>
+      <div class="st">C</div>
+      <div class="slot-leds">
+        <div class="st-led"></div>
+        <div class="st-led"></div>
+        <div class="st-led"></div>
+      </div>
+    </div>
+
+    <div class="display-panel">
+      <div class="dp-hdr">LOOP / PHRASE</div>
+      <div class="dp-name-row">
+        <div class="dp-led"></div>
+        <div class="dp-name">Tension Bed</div>
+        <div class="dp-arrow">▾</div>
+      </div>
+      <div class="dp-meta">92 BPM &nbsp;|&nbsp; 4 Bars</div>
+    </div>
+
+    <div class="knobs-row">
+      <div class="knob-wrap"><div class="knob dk"></div><div class="knob-range">DARK — BRIGHT</div><div class="knob-label">TONE</div></div>
+      <div class="knob-wrap"><div class="knob tl"></div><div class="knob-range">LP — HP</div><div class="knob-label">FILTER</div></div>
+      <div class="knob-wrap"><div class="knob cr"></div><div class="knob-range">1 — 8</div><div class="knob-label">VARIATION</div></div>
+    </div>
+
+    <div class="perf-row">
+      <div class="perf-btn-wrap">
+        <div class="p-led"></div>
+        <div class="perf-btn">FREE</div>
+      </div>
+      <div class="perf-btn-wrap">
+        <div class="p-led"></div>
+        <div class="perf-btn">HOLD</div>
+      </div>
+    </div>
+
+    <div class="vu-section">
+      <svg class="vu-svg" viewBox="0 0 156 52" xmlns="http://www.w3.org/2000/svg">
+        <rect width="156" height="52" rx="3" fill="#1A1808" stroke="#080602" stroke-width="1"/>
+        <rect x="2.5" y="2.5" width="151" height="47" rx="2" fill="url(#vf)"/>
+        <rect x="113" y="2.5" width="40.5" height="27" rx="0" fill="rgba(180,28,16,0.1)"/>
+        <path d="M 18 47 A 60 48 0 0 1 138 47" fill="none" stroke="rgba(0,0,0,0.12)" stroke-width="1"/>
+        <line x1="21" y1="38" x2="24" y2="34" stroke="#3A3010" stroke-width="0.8"/>
+        <line x1="40" y1="22" x2="44" y2="19" stroke="#3A3010" stroke-width="0.8"/>
+        <line x1="58" y1="13" x2="62" y2="11" stroke="#3A3010" stroke-width="0.8"/>
+        <line x1="72" y1="10" x2="76" y2="8" stroke="#3A3010" stroke-width="0.8"/>
+        <line x1="88" y1="9" x2="92" y2="8" stroke="#3A3010" stroke-width="0.8"/>
+        <line x1="103" y1="11" x2="107" y2="10" stroke="#3A3010" stroke-width="0.8"/>
+        <line x1="117" y1="17" x2="121" y2="15" stroke="#8A2010" stroke-width="1"/>
+        <text x="5" y="46" font-size="6.5" fill="#5A4A10" font-family="Arial" font-weight="600">-20</text>
+        <text x="27" y="31" font-size="6.5" fill="#5A4A10" font-family="Arial" font-weight="600">-10</text>
+        <text x="47" y="19" font-size="6.5" fill="#5A4A10" font-family="Arial" font-weight="600">-7</text>
+        <text x="64" y="14" font-size="6.5" fill="#5A4A10" font-family="Arial" font-weight="600">-5</text>
+        <text x="84" y="13" font-size="6.5" fill="#5A4A10" font-family="Arial" font-weight="600">-3</text>
+        <text x="101" y="16" font-size="6.5" fill="#5A4A10" font-family="Arial" font-weight="600">0</text>
+        <text x="119" y="25" font-size="6.5" fill="#902010" font-family="Arial" font-weight="700">+3</text>
+        <!-- needle: silence / far left -->
+        <line x1="78" y1="48" x2="43" y2="27" stroke="#1A1008" stroke-width="1.6"/>
+        <circle cx="78" cy="48" r="2.5" fill="#2A1A08"/>
+        <text x="120" y="46" font-size="9" fill="#5A4A10" font-family="Arial" font-weight="700" font-style="italic">VU</text>
+      </svg>
+    </div>
+
+    <div class="pads-section">
+      <div class="pads-hdr">
+        <span class="pads-lbl">Loops</span>
+        <div class="assign-pill"><span class="ap-arr">→</span><span class="ap-txt">SLOT A</span></div>
+      </div>
+      <div class="pad-grid">
+        <div class="pad pa"><div class="pad-pips"><div class="pp on"></div><div class="pp on"></div><div class="pp on"></div><div class="pp"></div><div class="pp"></div></div><span class="pad-n">01</span><span class="pad-badge">A</span></div>
+        <div class="pad"><div class="pad-pips"><div class="pp on"></div><div class="pp on"></div><div class="pp"></div><div class="pp"></div><div class="pp"></div></div><span class="pad-n">02</span></div>
+        <div class="pad"><div class="pad-pips"><div class="pp on"></div><div class="pp on"></div><div class="pp on"></div><div class="pp on"></div><div class="pp"></div></div><span class="pad-n">03</span></div>
+        <div class="pad"><div class="pad-pips"><div class="pp on"></div><div class="pp on"></div><div class="pp on"></div><div class="pp on"></div><div class="pp on"></div></div><span class="pad-n">04</span></div>
+        <div class="pad"><div class="pad-pips"><div class="pp on"></div><div class="pp"></div><div class="pp"></div><div class="pp"></div><div class="pp"></div></div><span class="pad-n">05</span></div>
+        <div class="pad"><div class="pad-pips"><div class="pp on"></div><div class="pp on"></div><div class="pp"></div><div class="pp"></div><div class="pp"></div></div><span class="pad-n">06</span></div>
+        <div class="pad"><div class="pad-pips"><div class="pp on"></div><div class="pp on"></div><div class="pp on"></div><div class="pp"></div><div class="pp"></div></div><span class="pad-n">07</span></div>
+        <div class="pad"><div class="pad-pips"><div class="pp on"></div><div class="pp on"></div><div class="pp on"></div><div class="pp on"></div><div class="pp"></div></div><span class="pad-n">08</span></div>
+      </div>
+    </div>
+
+    <div class="bottom-row">
+      <div class="pan-wrap">
+        <div class="knob dk sm"></div>
+        <div><div class="pan-lbl">PAN</div><div class="range-pair">L &nbsp;&nbsp; R</div></div>
+      </div>
+      <div class="sm-btns">
+        <div class="sm-btn">S</div>
+        <div class="sm-btn bypassed">M</div>
+      </div>
+    </div>
+
+    <div class="fader-section">
+      <div class="fader-inner">
+        <div class="fader-scale">
+          <span>10</span><span>5</span><span>0</span><span>-5</span><span>-10</span><span>-20</span><span>-30</span><span>-∞</span>
+        </div>
+        <div class="fader-track-wrap">
+          <div class="fader-track" style="height:100%;">
+            <div class="fader-cap" style="top:28%;"></div>
+          </div>
+          <div class="fader-lbl">VOL</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div><!-- end WILDCARD -->
+
+
+<!-- ═══════════════ MASTER ════════════════════════════ -->
+<div class="master">
+  <div class="master-header">
+    <div class="screw"></div>
+    <span class="master-title">Master</span>
+    <div class="screw"></div>
+  </div>
+
+  <!-- KEY / BPM -->
+  <div class="kbpm-row">
+    <div class="seg-d">
+      <span class="seg-l">KEY</span>
+      <span class="seg-v">Am</span>
+    </div>
+    <div class="seg-d">
+      <div class="sync-d"></div>
+      <span class="seg-l">BPM</span>
+      <span class="seg-v" style="color:#C8C040;text-shadow:0 0 8px rgba(200,192,64,0.6);">92</span>
+    </div>
+  </div>
+
+  <!-- Large master VU -->
+  <div class="master-vu">
+    <svg viewBox="0 0 210 70" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
+      <defs>
+        <linearGradient id="mvf" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#E8D888"/><stop offset="100%" stop-color="#C8B858"/>
+        </linearGradient>
+      </defs>
+      <rect width="210" height="70" rx="4" fill="#1A1808" stroke="#080602" stroke-width="1.5"/>
+      <rect x="3" y="3" width="204" height="64" rx="3" fill="url(#mvf)"/>
+      <rect x="152" y="3" width="55" height="36" rx="0" fill="rgba(180,28,16,0.12)"/>
+      <path d="M 20 62 A 88 66 0 0 1 190 62" fill="none" stroke="rgba(0,0,0,0.1)" stroke-width="1.2"/>
+      <!-- ticks -->
+      <line x1="24" y1="52" x2="28" y2="46" stroke="#3A3010" stroke-width="1"/>
+      <line x1="52" y1="28" x2="57" y2="23" stroke="#3A3010" stroke-width="1"/>
+      <line x1="80" y1="15" x2="85" y2="12" stroke="#3A3010" stroke-width="1"/>
+      <line x1="100" y1="11" x2="105" y2="9" stroke="#3A3010" stroke-width="1"/>
+      <line x1="121" y1="12" x2="126" y2="10" stroke="#3A3010" stroke-width="1"/>
+      <line x1="141" y1="17" x2="147" y2="14" stroke="#3A3010" stroke-width="1"/>
+      <line x1="160" y1="26" x2="166" y2="22" stroke="#8A2010" stroke-width="1.2"/>
+      <!-- labels -->
+      <text x="5" y="62" font-size="8" fill="#5A4A10" font-family="Arial" font-weight="600">-20</text>
+      <text x="32" y="40" font-size="8" fill="#5A4A10" font-family="Arial" font-weight="600">-10</text>
+      <text x="63" y="23" font-size="8" fill="#5A4A10" font-family="Arial" font-weight="600">-7</text>
+      <text x="87" y="17" font-size="8" fill="#5A4A10" font-family="Arial" font-weight="600">-5</text>
+      <text x="110" y="16" font-size="8" fill="#5A4A10" font-family="Arial" font-weight="600">-3</text>
+      <text x="134" y="21" font-size="8" fill="#5A4A10" font-family="Arial" font-weight="600">0</text>
+      <text x="158" y="33" font-size="8" fill="#902010" font-family="Arial" font-weight="700">+3</text>
+      <!-- needle: 0dB → angle 20° -->
+      <line x1="105" y1="64" x2="141" y2="16" stroke="#1A1008" stroke-width="2"/>
+      <circle cx="105" cy="64" r="3.5" fill="#2A1A08"/>
+      <text x="165" y="62" font-size="12" fill="#5A4A10" font-family="Arial" font-weight="700" font-style="italic">VU</text>
+    </svg>
+  </div>
+
+  <!-- Master knobs -->
+  <div class="m-knobs">
+    <div class="m-knob-wrap"><div class="knob dk m-knob"></div><div class="knob-label">OUTPUT</div></div>
+    <div class="m-knob-wrap"><div class="knob tl m-knob"></div><div class="knob-label">TONE</div></div>
+    <div class="m-knob-wrap"><div class="knob cr m-knob" style="width:32px;height:32px;"></div><div class="knob-label">CHARACTER</div></div>
+  </div>
+
+  <!-- GLUE / WARMTH / LIMIT -->
+  <div class="master-btns">
+    <div class="master-btn on">GLUE</div>
+    <div class="master-btn on">WARMTH</div>
+    <div class="master-btn">LIMIT</div>
+  </div>
+
+  <!-- Stereo width -->
+  <div>
+    <div class="sw-row" style="margin-bottom:3px;">
+      <div class="knob dk sm" style="width:22px;height:22px;"></div>
+      <span class="sw-label">STEREO WIDTH</span>
+    </div>
+    <div class="sw-range"><span style="font-size:6px;color:var(--txt-lo)">0%</span><span style="font-size:6px;color:var(--txt-lo)">100%</span></div>
+  </div>
+
+  <!-- Scenes -->
+  <div class="scenes-grid">
+    <div class="sc on"><span class="sc-n">1</span><span class="sc-t">Verse</span></div>
+    <div class="sc"><span class="sc-n">2</span><span class="sc-t">Build</span></div>
+    <div class="sc"><span class="sc-n">3</span><span class="sc-t">Chorus</span></div>
+    <div class="sc"><span class="sc-n">4</span><span class="sc-t">Drop</span></div>
+    <div class="sc"><span class="sc-n">5</span><span class="sc-t">Break</span></div>
+    <div class="sc"><span class="sc-n">6</span><span class="sc-t">Var</span></div>
+    <div class="sc"><span class="sc-n">7</span><span class="sc-t">Outro</span></div>
+    <div class="sc"><span class="sc-n">8</span><span class="sc-t">—</span></div>
+  </div>
+
+  <div class="disc-btn"><span style="font-size:12px;">⚄</span> DISCOVER</div>
+
+  <!-- Master fader + logo badge -->
+  <div style="display:flex;gap:8px;flex:1;align-items:stretch;min-height:80px;">
+    <div class="master-fader" style="flex:1;">
+      <div class="m-fader-scale">
+        <span>10</span><span>5</span><span>0</span><span>-5</span><span>-10</span><span>-20</span><span>-30</span><span>-∞</span>
+      </div>
+      <div class="m-fader-track">
+        <div class="m-fader-cap" style="top:38%;"></div>
+      </div>
+    </div>
+    <div class="logo-badge" style="flex:1;justify-content:center;">
+      <div class="lb-led"></div>
+      <div class="lb-title">STRATA</div>
+      <div class="lb-sub">Loop Console</div>
+    </div>
+  </div>
+
+</div><!-- end MASTER -->
+
+<!-- WOOD R -->
+<div class="wood r"></div>
+
+</div><!-- end instrument -->
+
+<!-- ═══ KEY ASSIGNMENT PANEL ══════════════════════════ -->
+<div class="key-panel" style="max-width:880px;margin:0 auto;">
+
+  <div class="kap-header">
+    <span class="kap-title">Key Assignment</span>
+    <button class="map-btn" id="mapBtn" onclick="toggleMapping()">
+      <div class="map-led" id="mapLed"></div>
+      MAPPING
+    </button>
+  </div>
+
+  <!-- ── OPTION 1: Panel Strip (default) ────────────── -->
+  <div class="kap-strip" id="kapStrip">
+
+    <!-- SCENES -->
+    <div class="ps-zone z-sc">
+      <div class="ps-nm">Scenes</div>
+      <div class="ps-sb">Recall</div>
+      <div class="ps-sgrid">
+        <div class="ps-t playing"><div class="ps-dot"></div><div class="ps-lbl">1</div></div>
+        <div class="ps-t"><div class="ps-dot"></div><div class="ps-lbl">2</div></div>
+        <div class="ps-t"><div class="ps-dot"></div><div class="ps-lbl">3</div></div>
+        <div class="ps-t"><div class="ps-dot"></div><div class="ps-lbl">4</div></div>
+        <div class="ps-t"><div class="ps-dot"></div><div class="ps-lbl">5</div></div>
+        <div class="ps-t"><div class="ps-dot"></div><div class="ps-lbl">6</div></div>
+        <div class="ps-t"><div class="ps-dot"></div><div class="ps-lbl">7</div></div>
+        <div class="ps-t"><div class="ps-dot"></div><div class="ps-lbl">8</div></div>
+      </div>
+      <div class="ps-rng">C1 – C2</div>
+    </div>
+
+    <!-- DRUMS -->
+    <div class="ps-zone z-dr">
+      <div class="ps-ch">CH 1</div>
+      <div class="ps-nm">Drums</div>
+      <div class="ps-sb">Beats</div>
+      <div class="ps-trigs">
+        <div class="ps-t playing"><div class="ps-m f">FREE</div><div class="ps-dot"></div><div class="ps-lbl">A</div></div>
+        <div class="ps-t loaded"><div class="ps-m h">HOLD</div><div class="ps-dot"></div><div class="ps-lbl">B</div></div>
+        <div class="ps-t"><div class="ps-dot"></div><div class="ps-lbl">C</div></div>
+      </div>
+      <div class="ps-rng">D2 · E2 · F2</div>
+    </div>
+
+    <!-- BASS -->
+    <div class="ps-zone z-ba">
+      <div class="ps-ch">CH 2</div>
+      <div class="ps-nm">Bass</div>
+      <div class="ps-sb">Synth</div>
+      <div class="ps-trigs">
+        <div class="ps-t playing"><div class="ps-m f">FREE</div><div class="ps-dot"></div><div class="ps-lbl">A</div></div>
+        <div class="ps-t playing"><div class="ps-m f">FREE</div><div class="ps-dot"></div><div class="ps-lbl">B</div></div>
+        <div class="ps-t"><div class="ps-dot"></div><div class="ps-lbl">C</div></div>
+      </div>
+      <div class="ps-rng">G2 · A2 · B2</div>
+    </div>
+
+    <!-- TOP LINE -->
+    <div class="ps-zone z-tl">
+      <div class="ps-ch">CH 3</div>
+      <div class="ps-nm">Top Line</div>
+      <div class="ps-sb">Melody</div>
+      <div class="ps-trigs">
+        <div class="ps-t playing"><div class="ps-m f">FREE</div><div class="ps-dot"></div><div class="ps-lbl">A</div></div>
+        <div class="ps-t"><div class="ps-dot"></div><div class="ps-lbl">B</div></div>
+        <div class="ps-t"><div class="ps-dot"></div><div class="ps-lbl">C</div></div>
+      </div>
+      <div class="ps-rng">C3 · D3 · E3</div>
+    </div>
+
+    <!-- WILDCARD -->
+    <div class="ps-zone z-wc">
+      <div class="ps-ch">CH 4</div>
+      <div class="ps-nm">Wildcard</div>
+      <div class="ps-sb">Texture</div>
+      <div class="ps-trigs">
+        <div class="ps-t loaded"><div class="ps-m f">FREE</div><div class="ps-dot"></div><div class="ps-lbl">A</div></div>
+        <div class="ps-t"><div class="ps-dot"></div><div class="ps-lbl">B</div></div>
+        <div class="ps-t"><div class="ps-dot"></div><div class="ps-lbl">C</div></div>
+      </div>
+      <div class="ps-rng">F3 · G3 · A3</div>
+    </div>
+
+    <!-- FILLS -->
+    <div class="ps-zone z-fi">
+      <div class="ps-nm">Fills</div>
+      <div class="ps-sb">One-shot</div>
+      <div class="ps-trigs">
+        <div class="ps-t"><div class="ps-dot"></div><div class="ps-lbl">1</div></div>
+        <div class="ps-t"><div class="ps-dot"></div><div class="ps-lbl">2</div></div>
+        <div class="ps-t"><div class="ps-dot"></div><div class="ps-lbl">3</div></div>
+      </div>
+      <div class="ps-rng">B3 · C4 · D4</div>
+    </div>
+
+    <!-- TRANS -->
+    <div class="ps-zone z-tr">
+      <div class="ps-nm">Trans</div>
+      <div class="ps-sb">One-shot</div>
+      <div class="ps-trigs">
+        <div class="ps-t"><div class="ps-dot"></div><div class="ps-lbl">1</div></div>
+        <div class="ps-t"><div class="ps-dot"></div><div class="ps-lbl">2</div></div>
+        <div class="ps-t"><div class="ps-dot"></div><div class="ps-lbl">3</div></div>
+      </div>
+      <div class="ps-rng">E4 · F4 · G4</div>
+    </div>
+
+  </div><!-- end kap-strip -->
+
+  <!-- ── OPTION 2: Matrix (hidden by default) ────────── -->
+  <div class="kap-matrix hidden" id="kapMatrix">
+    <table>
+      <thead>
+        <tr>
+          <th class="th-fn">Function</th><th class="th-sp"></th>
+          <th class="th-k">Slot A</th><th class="th-k">Slot B</th><th class="th-k">Slot C</th>
+          <th class="th-sp"></th><th class="th-nr">Key Range</th><th class="th-mo">Mode</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="mat-hdr"><td colspan="8">Performance Controls</td></tr>
+        <tr class="mr-sc">
+          <td class="td-fn"><div class="fn-r"><div class="fn-bar" style="background:rgb(94,200,108);box-shadow:0 0 5px rgb(94,200,108)"></div><div><div class="fn-nm">Scenes</div><div class="fn-sb">Save / Recall Combinations</div></div></div></td>
+          <td class="td-sp"></td>
+          <td class="td-k" colspan="3">
+            <div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;">
+              <div class="kc play"><div class="kc-d"></div><div class="kc-s">1</div><div class="kc-n">C1</div></div>
+              <div class="kc asgn"><div class="kc-d"></div><div class="kc-s">2</div><div class="kc-n">D1</div></div>
+              <div class="kc"><div class="kc-s" style="color:#504840">3</div><div class="kc-n">E1</div></div>
+              <div class="kc"><div class="kc-s" style="color:#504840">4</div><div class="kc-n">F1</div></div>
+              <div class="kc"><div class="kc-s" style="color:#504840">5</div><div class="kc-n">G1</div></div>
+              <div class="kc"><div class="kc-s" style="color:#504840">6</div><div class="kc-n">A1</div></div>
+              <div class="kc"><div class="kc-s" style="color:#504840">7</div><div class="kc-n">B1</div></div>
+              <div class="kc"><div class="kc-s" style="color:#504840">8</div><div class="kc-n">C2</div></div>
+            </div>
+          </td>
+          <td class="td-sp"></td><td class="td-nr">C1 – C2</td>
+          <td class="td-mo"><div class="mc-row"><div class="mc trig">TRIGGER</div></div></td>
+        </tr>
+        <tr class="mat-hdr"><td colspan="8">Layer Channels — Slot Triggers</td></tr>
+        <tr class="mr-dr">
+          <td class="td-fn"><div class="fn-r"><div class="fn-bar" style="background:rgb(192,56,56);box-shadow:0 0 5px rgb(192,56,56)"></div><div><div class="fn-nm">1 · Drums</div><div class="fn-sb">Beats · Percussion</div></div></div></td>
+          <td class="td-sp"></td>
+          <td class="td-k"><div class="kc play"><div class="kc-d"></div><div class="kc-s">A</div><div class="kc-n">D2</div></div></td>
+          <td class="td-k"><div class="kc asgn"><div class="kc-d"></div><div class="kc-s">B</div><div class="kc-n">E2</div></div></td>
+          <td class="td-k"><div class="kc"><div class="kc-s" style="color:#504840">C</div><div class="kc-n">F2</div></div></td>
+          <td class="td-sp"></td><td class="td-nr">D2 – F2</td>
+          <td class="td-mo"><div class="mc-row"><div class="mc free">FREE</div><div class="mc hold">HOLD</div></div></td>
+        </tr>
+        <tr class="mr-ba">
+          <td class="td-fn"><div class="fn-r"><div class="fn-bar" style="background:rgb(88,56,192);box-shadow:0 0 5px rgb(88,56,192)"></div><div><div class="fn-nm">2 · Bass</div><div class="fn-sb">Synth Bass · Low End</div></div></div></td>
+          <td class="td-sp"></td>
+          <td class="td-k"><div class="kc play"><div class="kc-d"></div><div class="kc-s">A</div><div class="kc-n">G2</div></div></td>
+          <td class="td-k"><div class="kc play"><div class="kc-d"></div><div class="kc-s">B</div><div class="kc-n">A2</div></div></td>
+          <td class="td-k"><div class="kc"><div class="kc-s" style="color:#504840">C</div><div class="kc-n">B2</div></div></td>
+          <td class="td-sp"></td><td class="td-nr">G2 – B2</td>
+          <td class="td-mo"><div class="mc-row"><div class="mc free">FREE</div><div class="mc hold">HOLD</div></div></td>
+        </tr>
+        <tr class="mr-tl">
+          <td class="td-fn"><div class="fn-r"><div class="fn-bar" style="background:rgb(26,136,152);box-shadow:0 0 5px rgb(26,136,152)"></div><div><div class="fn-nm">3 · Top Line</div><div class="fn-sb">Melody · Lead</div></div></div></td>
+          <td class="td-sp"></td>
+          <td class="td-k"><div class="kc play"><div class="kc-d"></div><div class="kc-s">A</div><div class="kc-n">C3</div></div></td>
+          <td class="td-k"><div class="kc"><div class="kc-s" style="color:#504840">B</div><div class="kc-n">D3</div></div></td>
+          <td class="td-k"><div class="kc"><div class="kc-s" style="color:#504840">C</div><div class="kc-n">E3</div></div></td>
+          <td class="td-sp"></td><td class="td-nr">C3 – E3</td>
+          <td class="td-mo"><div class="mc-row"><div class="mc free">FREE</div><div class="mc hold">HOLD</div></div></td>
+        </tr>
+        <tr class="mr-wc">
+          <td class="td-fn"><div class="fn-r"><div class="fn-bar" style="background:rgb(184,112,16);box-shadow:0 0 5px rgb(184,112,16)"></div><div><div class="fn-nm">4 · Wildcard</div><div class="fn-sb">Texture · Atmosphere</div></div></div></td>
+          <td class="td-sp"></td>
+          <td class="td-k"><div class="kc asgn"><div class="kc-d"></div><div class="kc-s">A</div><div class="kc-n">F3</div></div></td>
+          <td class="td-k"><div class="kc"><div class="kc-s" style="color:#504840">B</div><div class="kc-n">G3</div></div></td>
+          <td class="td-k"><div class="kc"><div class="kc-s" style="color:#504840">C</div><div class="kc-n">A3</div></div></td>
+          <td class="td-sp"></td><td class="td-nr">F3 – A3</td>
+          <td class="td-mo"><div class="mc-row"><div class="mc free">FREE</div><div class="mc hold">HOLD</div></div></td>
+        </tr>
+        <tr class="mat-hdr"><td colspan="8">Performance One-Shots</td></tr>
+        <tr class="mr-fi">
+          <td class="td-fn"><div class="fn-r"><div class="fn-bar" style="background:rgb(200,80,16);box-shadow:0 0 5px rgb(200,80,16)"></div><div><div class="fn-nm">Fills</div><div class="fn-sb">Rhythmic fills · Trigger once</div></div></div></td>
+          <td class="td-sp"></td>
+          <td class="td-k"><div class="kc"><div class="kc-s" style="color:rgb(200,80,16)">1</div><div class="kc-n">B3</div></div></td>
+          <td class="td-k"><div class="kc"><div class="kc-s" style="color:rgb(200,80,16)">2</div><div class="kc-n">C4</div></div></td>
+          <td class="td-k"><div class="kc"><div class="kc-s" style="color:rgb(200,80,16)">3</div><div class="kc-n">D4</div></div></td>
+          <td class="td-sp"></td><td class="td-nr">B3 – D4</td>
+          <td class="td-mo"><div class="mc-row"><div class="mc trig">ONE-SHOT</div></div></td>
+        </tr>
+        <tr class="mr-tr">
+          <td class="td-fn"><div class="fn-r"><div class="fn-bar" style="background:rgb(48,120,176);box-shadow:0 0 5px rgb(48,120,176)"></div><div><div class="fn-nm">Transitions</div><div class="fn-sb">Risers · Downlifters · Trigger once</div></div></div></td>
+          <td class="td-sp"></td>
+          <td class="td-k"><div class="kc"><div class="kc-s" style="color:rgb(48,120,176)">1</div><div class="kc-n">E4</div></div></td>
+          <td class="td-k"><div class="kc"><div class="kc-s" style="color:rgb(48,120,176)">2</div><div class="kc-n">F4</div></div></td>
+          <td class="td-k"><div class="kc"><div class="kc-s" style="color:rgb(48,120,176)">3</div><div class="kc-n">G4</div></div></td>
+          <td class="td-sp"></td><td class="td-nr">E4 – G4</td>
+          <td class="td-mo"><div class="mc-row"><div class="mc trig">ONE-SHOT</div></div></td>
+        </tr>
+      </tbody>
+    </table>
+  </div><!-- end kap-matrix -->
+
+</div><!-- end key-panel -->
+
+<script>
+function toggleMapping() {
+  const strip  = document.getElementById('kapStrip');
+  const matrix = document.getElementById('kapMatrix');
+  const btn    = document.getElementById('mapBtn');
+  strip.classList.toggle('hidden');
+  matrix.classList.toggle('hidden');
+  btn.classList.toggle('active');
+}
+</script>
+
+</body>
+</html>

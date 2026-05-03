@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>STRATA — Key Assignment Schematic Views</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+:root {
+  --bg:        #1A1A1A;
+  --surface:   #242424;
+  --surface2:  #2E2E2E;
+  --border:    #3A3A3A;
+  --text:      #D0C8B8;
+  --text-dim:  #808070;
+  --text-lo:   #505048;
+
+  --scenes:    #5EC86C;
+  --scenes-d:  #2A7838;
+  --scenes-bg: rgba(94,200,108,0.10);
+
+  --drums:     #E06060;
+  --drums-d:   #903030;
+  --drums-bg:  rgba(224,96,96,0.10);
+
+  --bass:      #7068D8;
+  --bass-d:    #3828A0;
+  --bass-bg:   rgba(112,104,216,0.10);
+
+  --topline:   #30B8CC;
+  --topline-d: #187888;
+  --topline-bg:rgba(48,184,204,0.10);
+
+  --wild:      #CCA030;
+  --wild-d:    #886810;
+  --wild-bg:   rgba(204,160,48,0.10);
+
+  --fills:     #D88030;
+  --fills-d:   #904A10;
+  --fills-bg:  rgba(216,128,48,0.10);
+
+  --trans:     #4098D0;
+  --trans-d:   #205888;
+  --trans-bg:  rgba(64,152,208,0.10);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  font-family: 'Barlow Condensed', sans-serif;
+  color: var(--text);
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 50px;
+  min-height: 100vh;
+}
+
+.example-label {
+  font-size: 9px; font-weight: 700;
+  letter-spacing: 4px; text-transform: uppercase;
+  color: var(--text-lo); margin-bottom: 12px;
+}
+.example-title {
+  font-size: 18px; font-weight: 700;
+  letter-spacing: 2px; text-transform: uppercase;
+  color: var(--text-dim); margin-bottom: 18px;
+}
+
+
+/* ══════════════════════════════════════════════════════
+   OPTION 1 — Console Panel Strip
+══════════════════════════════════════════════════════ */
+.panel-strip {
+  display: flex;
+  background: linear-gradient(180deg, #2A2820 0%, #222018 100%);
+  border: 1px solid #3A3628;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.04),
+    0 4px 20px rgba(0,0,0,0.6);
+}
+
+.ps-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 10px 10px;
+  border-right: 1px solid #2E2C24;
+  position: relative;
+  min-width: 0;
+}
+.ps-zone:last-child { border-right: none; }
+
+/* Colored top accent line */
+.ps-zone::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--zc);
+  box-shadow: 0 0 8px var(--zc);
+  opacity: 0.8;
+}
+
+.ps-zone.scenes   { --zc: var(--scenes);  flex: 1.8; }
+.ps-zone.drums    { --zc: var(--drums);   flex: 1;   }
+.ps-zone.bass     { --zc: var(--bass);    flex: 1;   }
+.ps-zone.topline  { --zc: var(--topline); flex: 1;   }
+.ps-zone.wildcard { --zc: var(--wild);    flex: 1;   }
+.ps-zone.fills    { --zc: var(--fills);   flex: 0.9; }
+.ps-zone.trans    { --zc: var(--trans);   flex: 0.9; }
+
+.ps-ch-num {
+  font-family: 'Space Mono', monospace;
+  font-size: 9px; font-weight: 700;
+  color: var(--zc); opacity: 0.6;
+  letter-spacing: 1px; margin-bottom: 1px;
+  text-shadow: 0 0 8px var(--zc);
+  align-self: flex-start;
+}
+
+.ps-title {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 2px; text-transform: uppercase;
+  color: var(--text); margin-bottom: 2px;
+  white-space: nowrap; align-self: flex-start;
+}
+
+.ps-sub {
+  font-size: 7px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--text-dim); margin-bottom: 10px;
+  align-self: flex-start;
+}
+
+/* Trigger buttons */
+.ps-triggers {
+  display: flex; gap: 5px;
+  flex-wrap: wrap;
+  justify-content: center;
+  flex: 1; align-items: center;
+}
+
+.ps-trig {
+  width: 34px; height: 32px;
+  border-radius: 3px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 3px;
+  cursor: pointer;
+  border: 1px solid rgba(0,0,0,0.4);
+  position: relative;
+  transition: all 0.1s;
+
+  /* default off state */
+  background: linear-gradient(180deg, #2A2820 0%, #1E1C14 100%);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.5);
+}
+
+.ps-trig.active {
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--zc) 30%, #1E1C14) 0%,
+    color-mix(in srgb, var(--zc) 20%, #1E1C14) 100%);
+  border-color: var(--zc);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--zc) 40%, transparent),
+              inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+.ps-trig.playing {
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--zc) 60%, #1E1C14) 0%,
+    color-mix(in srgb, var(--zc) 45%, #1E1C14) 100%);
+  border-color: var(--zc);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--zc) 60%, transparent),
+              inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+.ps-trig-led {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: #2A2820;
+}
+.ps-trig.active .ps-trig-led {
+  background: var(--zc); opacity: 0.6;
+  box-shadow: 0 0 4px var(--zc);
+}
+.ps-trig.playing .ps-trig-led {
+  background: var(--zc);
+  box-shadow: 0 0 8px var(--zc);
+  animation: led-pulse 1.2s ease-in-out infinite;
+}
+@keyframes led-pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+.ps-trig-lbl {
+  font-family: 'Space Mono', monospace;
+  font-size: 9px; font-weight: 700;
+  color: var(--text-dim); letter-spacing: 1px;
+  line-height: 1;
+}
+.ps-trig.active .ps-trig-lbl { color: var(--text); }
+.ps-trig.playing .ps-trig-lbl { color: var(--text); text-shadow: 0 0 6px var(--zc); }
+
+.ps-scenes-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px;
+}
+
+.ps-note-range {
+  font-family: 'Space Mono', monospace;
+  font-size: 7px; color: var(--text-lo);
+  letter-spacing: 1px; margin-top: 8px;
+  align-self: flex-start;
+}
+
+/* FREE/HOLD mode badge on trigger */
+.ps-mode-badge {
+  position: absolute; top: 2px; right: 2px;
+  font-size: 5px; font-weight: 700; letter-spacing: 0.5px;
+  padding: 0px 2px; border-radius: 1px;
+  line-height: 1.6;
+}
+.ps-mode-badge.free { background: rgba(64,184,104,0.3); color: #40B868; }
+.ps-mode-badge.hold { color: var(--zc); background: rgba(0,0,0,0.3); }
+
+
+/* ══════════════════════════════════════════════════════
+   OPTION 2 — Assignment Matrix Table
+══════════════════════════════════════════════════════ */
+.matrix-wrap {
+  background: #1E1E1A;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+
+.matrix-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* Header row */
+.matrix-table thead tr {
+  background: #141410;
+}
+.matrix-table th {
+  padding: 8px 12px;
+  font-size: 8px; font-weight: 700; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--text-lo);
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.matrix-table th.col-fn   { width: 180px; border-right: 1px solid var(--border); }
+.matrix-table th.col-key  { width: 70px; text-align: center; }
+.matrix-table th.col-note { width: 55px; text-align: center; color: var(--text-lo); }
+.matrix-table th.col-mode { width: 90px; text-align: center; }
+.matrix-table th.col-sep  { width: 10px; background: #111; padding: 0; }
+
+/* Data rows */
+.matrix-table tbody tr {
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: background 0.1s;
+}
+.matrix-table tbody tr:hover { background: rgba(255,255,255,0.02); }
+.matrix-table tbody tr:last-child { border-bottom: none; }
+
+.matrix-table td {
+  padding: 10px 12px;
+  font-size: 12px; font-weight: 600;
+  letter-spacing: 1px;
+  vertical-align: middle;
+}
+
+/* Function label cell */
+td.fn-cell {
+  border-right: 1px solid var(--border);
+  white-space: nowrap;
+}
+.fn-row { display: flex; align-items: center; gap: 8px; }
+.fn-color-bar {
+  width: 3px; height: 30px; border-radius: 2px;
+  flex-shrink: 0;
+}
+.fn-name { font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--text); }
+.fn-sub  { font-size: 8px; font-weight: 400; letter-spacing: 1.5px; color: var(--text-dim); margin-top: 1px; }
+
+/* Key assignment cell */
+td.key-cell { text-align: center; }
+.key-chip {
+  display: inline-flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 3px;
+  min-width: 48px; padding: 6px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(255,255,255,0.0);
+  background: transparent;
+}
+.key-chip.assigned {
+  background: var(--zc-bg);
+  border-color: var(--zc-c);
+  box-shadow: 0 0 8px rgba(0,0,0,0.3);
+}
+.key-chip.playing {
+  background: var(--zc-bg);
+  border-color: var(--zc-c);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--zc-c) 30%, transparent);
+}
+.kc-slot {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px; font-weight: 700; letter-spacing: 1px;
+  color: var(--zc-c);
+  text-shadow: 0 0 8px var(--zc-c);
+}
+.kc-note {
+  font-size: 7px; letter-spacing: 1px;
+  color: var(--text-dim);
+  font-family: 'Space Mono', monospace;
+}
+.kc-led {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--zc-c); opacity: 0.4;
+}
+.key-chip.playing .kc-led {
+  opacity: 1;
+  box-shadow: 0 0 6px var(--zc-c);
+  animation: led-pulse 1.2s ease-in-out infinite;
+}
+
+/* Note range cell */
+td.note-cell {
+  text-align: center;
+  font-family: 'Space Mono', monospace;
+  font-size: 8px; color: var(--text-lo); letter-spacing: 1px;
+}
+
+/* Mode cell */
+td.mode-cell { text-align: center; }
+.mode-chips { display: flex; gap: 4px; justify-content: center; }
+.mode-chip {
+  padding: 3px 7px; border-radius: 2px;
+  font-size: 7px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+.mode-chip.free { background: rgba(64,184,104,0.15); border: 1px solid rgba(64,184,104,0.4); color: #40B868; }
+.mode-chip.hold { background: var(--zc-bg); border: 1px solid var(--zc-c); color: var(--zc-c); opacity: 0.7; }
+.mode-chip.both { background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text-dim); }
+
+/* Column separator */
+td.sep-cell { padding: 0; width: 8px; background: #141410; }
+
+/* Row coloring per zone */
+tr.r-scenes   { --zc-c: var(--scenes);  --zc-bg: var(--scenes-bg);  }
+tr.r-drums    { --zc-c: var(--drums);   --zc-bg: var(--drums-bg);   }
+tr.r-bass     { --zc-c: var(--bass);    --zc-bg: var(--bass-bg);    }
+tr.r-topline  { --zc-c: var(--topline); --zc-bg: var(--topline-bg); }
+tr.r-wildcard { --zc-c: var(--wild);    --zc-bg: var(--wild-bg);    }
+tr.r-fills    { --zc-c: var(--fills);   --zc-bg: var(--fills-bg);   }
+tr.r-trans    { --zc-c: var(--trans);   --zc-bg: var(--trans-bg);   }
+
+/* Matrix section header */
+.matrix-section-hdr {
+  background: #111;
+  padding: 5px 12px;
+  font-size: 7px; font-weight: 700; letter-spacing: 3px;
+  text-transform: uppercase; color: var(--text-lo);
+  border-bottom: 1px solid var(--border);
+}
+
+/* State legend */
+.legend {
+  display: flex; gap: 20px; padding: 10px 14px;
+  background: #141410;
+  border-top: 1px solid var(--border);
+}
+.legend-item { display: flex; align-items: center; gap: 6px; }
+.legend-swatch { width: 10px; height: 10px; border-radius: 2px; }
+.legend-txt { font-size: 8px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-lo); }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════
+     OPTION 1 — Console Panel Strip
+════════════════════════════════════════════════════ -->
+<div>
+  <div class="example-label">Option 1</div>
+  <div class="example-title">Console Panel Strip</div>
+
+  <div class="panel-strip">
+
+    <!-- SCENES -->
+    <div class="ps-zone scenes">
+      <div class="ps-title">Scenes</div>
+      <div class="ps-sub">C1 – C2</div>
+      <div class="ps-triggers ps-scenes-grid">
+        <div class="ps-trig playing">
+          <div class="ps-trig-led"></div>
+          <div class="ps-trig-lbl">1</div>
+        </div>
+        <div class="ps-trig"><div class="ps-trig-led"></div><div class="ps-trig-lbl">2</div></div>
+        <div class="ps-trig"><div class="ps-trig-led"></div><div class="ps-trig-lbl">3</div></div>
+        <div class="ps-trig"><div class="ps-trig-led"></div><div class="ps-trig-lbl">4</div></div>
+        <div class="ps-trig"><div class="ps-trig-led"></div><div class="ps-trig-lbl">5</div></div>
+        <div class="ps-trig"><div class="ps-trig-led"></div><div class="ps-trig-lbl">6</div></div>
+        <div class="ps-trig"><div class="ps-trig-led"></div><div class="ps-trig-lbl">7</div></div>
+        <div class="ps-trig"><div class="ps-trig-led"></div><div class="ps-trig-lbl">8</div></div>
+      </div>
+    </div>
+
+    <!-- DRUMS -->
+    <div class="ps-zone drums">
+      <div class="ps-ch-num">CH 1</div>
+      <div class="ps-title">Drums</div>
+      <div class="ps-sub">D2 · E2 · F2</div>
+      <div class="ps-triggers">
+        <div class="ps-trig playing">
+          <div class="ps-mode-badge free">FREE</div>
+          <div class="ps-trig-led"></div>
+          <div class="ps-trig-lbl">A</div>
+        </div>
+        <div class="ps-trig active">
+          <div class="ps-mode-badge hold">HOLD</div>
+          <div class="ps-trig-led"></div>
+          <div class="ps-trig-lbl">B</div>
+        </div>
+        <div class="ps-trig">
+          <div class="ps-trig-led"></div>
+          <div class="ps-trig-lbl">C</div>
+        </div>
+      </div>
+      <div class="ps-note-range">BEATS</div>
+    </div>
+
+    <!-- BASS -->
+    <div class="ps-zone bass">
+      <div class="ps-ch-num">CH 2</div>
+      <div class="ps-title">Bass</div>
+      <div class="ps-sub">G2 · A2 · B2</div>
+      <div class="ps-triggers">
+        <div class="ps-trig playing">
+          <div class="ps-mode-badge free">FREE</div>
+          <div class="ps-trig-led"></div>
+          <div class="ps-trig-lbl">A</div>
+        </div>
+        <div class="ps-trig playing">
+          <div class="ps-mode-badge free">FREE</div>
+          <div class="ps-trig-led"></div>
+          <div class="ps-trig-lbl">B</div>
+        </div>
+        <div class="ps-trig">
+          <div class="ps-trig-led"></div>
+          <div class="ps-trig-lbl">C</div>
+        </div>
+      </div>
+      <div class="ps-note-range">SYNTH</div>
+    </div>
+
+    <!-- TOP LINE -->
+    <div class="ps-zone topline">
+      <div class="ps-ch-num">CH 3</div>
+      <div class="ps-title">Top Line</div>
+      <div class="ps-sub">C3 · D3 · E3</div>
+      <div class="ps-triggers">
+        <div class="ps-trig playing">
+          <div class="ps-mode-badge free">FREE</div>
+          <div class="ps-trig-led"></div>
+          <div class="ps-trig-lbl">A</div>
+        </div>
+        <div class="ps-trig">
+          <div class="ps-trig-led"></div>
+          <div class="ps-trig-lbl">B</div>
+        </div>
+        <div class="ps-trig">
+          <div class="ps-trig-led"></div>
+          <div class="ps-trig-lbl">C</div>
+        </div>
+      </div>
+      <div class="ps-note-range">MELODY</div>
+    </div>
+
+    <!-- WILDCARD -->
+    <div class="ps-zone wildcard">
+      <div class="ps-ch-num">CH 4</div>
+      <div class="ps-title">Wildcard</div>
+      <div class="ps-sub">F3 · G3 · A3</div>
+      <div class="ps-triggers">
+        <div class="ps-trig active">
+          <div class="ps-mode-badge free">FREE</div>
+          <div class="ps-trig-led"></div>
+          <div class="ps-trig-lbl">A</div>
+        </div>
+        <div class="ps-trig">
+          <div class="ps-trig-led"></div>
+          <div class="ps-trig-lbl">B</div>
+        </div>
+        <div class="ps-trig">
+          <div class="ps-trig-led"></div>
+          <div class="ps-trig-lbl">C</div>
+        </div>
+      </div>
+      <div class="ps-note-range">TEXTURE</div>
+    </div>
+
+    <!-- FILLS -->
+    <div class="ps-zone fills">
+      <div class="ps-title">Fills</div>
+      <div class="ps-sub">B3 · C4 · D4</div>
+      <div class="ps-triggers">
+        <div class="ps-trig"><div class="ps-trig-led"></div><div class="ps-trig-lbl">1</div></div>
+        <div class="ps-trig"><div class="ps-trig-led"></div><div class="ps-trig-lbl">2</div></div>
+        <div class="ps-trig"><div class="ps-trig-led"></div><div class="ps-trig-lbl">3</div></div>
+      </div>
+      <div class="ps-note-range">ONE-SHOT</div>
+    </div>
+
+    <!-- TRANS -->
+    <div class="ps-zone trans">
+      <div class="ps-title">Trans</div>
+      <div class="ps-sub">E4 · F4 · G4</div>
+      <div class="ps-triggers">
+        <div class="ps-trig"><div class="ps-trig-led"></div><div class="ps-trig-lbl">1</div></div>
+        <div class="ps-trig"><div class="ps-trig-led"></div><div class="ps-trig-lbl">2</div></div>
+        <div class="ps-trig"><div class="ps-trig-led"></div><div class="ps-trig-lbl">3</div></div>
+      </div>
+      <div class="ps-note-range">ONE-SHOT</div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     OPTION 2 — Assignment Matrix Table
+════════════════════════════════════════════════════ -->
+<div>
+  <div class="example-label">Option 2</div>
+  <div class="example-title">Assignment Matrix</div>
+
+  <div class="matrix-wrap">
+    <table class="matrix-table">
+      <thead>
+        <tr>
+          <th class="col-fn">Function</th>
+          <th class="col-sep"></th>
+          <th class="col-key">Slot A</th>
+          <th class="col-key">Slot B</th>
+          <th class="col-key">Slot C</th>
+          <th class="col-sep"></th>
+          <th class="col-note">Key Range</th>
+          <th class="col-mode">Mode</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <!-- SCENES divider -->
+        <tr><td colspan="8" class="matrix-section-hdr">Performance Controls</td></tr>
+
+        <tr class="r-scenes">
+          <td class="fn-cell">
+            <div class="fn-row">
+              <div class="fn-color-bar" style="background:var(--scenes);box-shadow:0 0 6px var(--scenes)"></div>
+              <div>
+                <div class="fn-name">Scenes</div>
+                <div class="fn-sub">Save / Recall Combinations</div>
+              </div>
+            </div>
+          </td>
+          <td class="sep-cell"></td>
+          <td class="key-cell" colspan="3">
+            <div style="display:flex;gap:5px;justify-content:center;flex-wrap:wrap;">
+              <div class="key-chip playing"><div class="kc-led"></div><div class="kc-slot">1</div><div class="kc-note">C1</div></div>
+              <div class="key-chip assigned"><div class="kc-led"></div><div class="kc-slot">2</div><div class="kc-note">D1</div></div>
+              <div class="key-chip"><div class="kc-slot" style="color:var(--text-lo)">3</div><div class="kc-note">E1</div></div>
+              <div class="key-chip"><div class="kc-slot" style="color:var(--text-lo)">4</div><div class="kc-note">F1</div></div>
+              <div class="key-chip"><div class="kc-slot" style="color:var(--text-lo)">5</div><div class="kc-note">G1</div></div>
+              <div class="key-chip"><div class="kc-slot" style="color:var(--text-lo)">6</div><div class="kc-note">A1</div></div>
+              <div class="key-chip"><div class="kc-slot" style="color:var(--text-lo)">7</div><div class="kc-note">B1</div></div>
+              <div class="key-chip"><div class="kc-slot" style="color:var(--text-lo)">8</div><div class="kc-note">C2</div></div>
+            </div>
+          </td>
+          <td class="sep-cell"></td>
+          <td class="note-cell">C1 – C2</td>
+          <td class="mode-cell">
+            <div class="mode-chips"><div class="mode-chip both">TRIGGER</div></div>
+          </td>
+        </tr>
+
+        <!-- LAYER CHANNELS divider -->
+        <tr><td colspan="8" class="matrix-section-hdr">Layer Channels — Slot Triggers</td></tr>
+
+        <tr class="r-drums">
+          <td class="fn-cell">
+            <div class="fn-row">
+              <div class="fn-color-bar" style="background:var(--drums);box-shadow:0 0 6px var(--drums)"></div>
+              <div>
+                <div class="fn-name">1 &nbsp; Drums</div>
+                <div class="fn-sub">Beats · Percussion</div>
+              </div>
+            </div>
+          </td>
+          <td class="sep-cell"></td>
+          <td class="key-cell">
+            <div class="key-chip playing"><div class="kc-led"></div><div class="kc-slot">A</div><div class="kc-note">D2</div></div>
+          </td>
+          <td class="key-cell">
+            <div class="key-chip assigned"><div class="kc-led"></div><div class="kc-slot">B</div><div class="kc-note">E2</div></div>
+          </td>
+          <td class="key-cell">
+            <div class="key-chip"><div class="kc-slot" style="color:var(--text-lo)">C</div><div class="kc-note">F2</div></div>
+          </td>
+          <td class="sep-cell"></td>
+          <td class="note-cell">D2 – F2</td>
+          <td class="mode-cell">
+            <div class="mode-chips">
+              <div class="mode-chip free">FREE</div>
+              <div class="mode-chip hold">HOLD</div>
+            </div>
+          </td>
+        </tr>
+
+        <tr class="r-bass">
+          <td class="fn-cell">
+            <div class="fn-row">
+              <div class="fn-color-bar" style="background:var(--bass);box-shadow:0 0 6px var(--bass)"></div>
+              <div>
+                <div class="fn-name">2 &nbsp; Bass</div>
+                <div class="fn-sub">Synth Bass · Low End</div>
+              </div>
+            </div>
+          </td>
+          <td class="sep-cell"></td>
+          <td class="key-cell">
+            <div class="key-chip playing"><div class="kc-led"></div><div class="kc-slot">A</div><div class="kc-note">G2</div></div>
+          </td>
+          <td class="key-cell">
+            <div class="key-chip playing"><div class="kc-led"></div><div class="kc-slot">B</div><div class="kc-note">A2</div></div>
+          </td>
+          <td class="key-cell">
+            <div class="key-chip"><div class="kc-slot" style="color:var(--text-lo)">C</div><div class="kc-note">B2</div></div>
+          </td>
+          <td class="sep-cell"></td>
+          <td class="note-cell">G2 – B2</td>
+          <td class="mode-cell">
+            <div class="mode-chips">
+              <div class="mode-chip free">FREE</div>
+              <div class="mode-chip hold">HOLD</div>
+            </div>
+          </td>
+        </tr>
+
+        <tr class="r-topline">
+          <td class="fn-cell">
+            <div class="fn-row">
+              <div class="fn-color-bar" style="background:var(--topline);box-shadow:0 0 6px var(--topline)"></div>
+              <div>
+                <div class="fn-name">3 &nbsp; Top Line</div>
+                <div class="fn-sub">Melody · Lead</div>
+              </div>
+            </div>
+          </td>
+          <td class="sep-cell"></td>
+          <td class="key-cell">
+            <div class="key-chip playing"><div class="kc-led"></div><div class="kc-slot">A</div><div class="kc-note">C3</div></div>
+          </td>
+          <td class="key-cell">
+            <div class="key-chip"><div class="kc-slot" style="color:var(--text-lo)">B</div><div class="kc-note">D3</div></div>
+          </td>
+          <td class="key-cell">
+            <div class="key-chip"><div class="kc-slot" style="color:var(--text-lo)">C</div><div class="kc-note">E3</div></div>
+          </td>
+          <td class="sep-cell"></td>
+          <td class="note-cell">C3 – E3</td>
+          <td class="mode-cell">
+            <div class="mode-chips">
+              <div class="mode-chip free">FREE</div>
+              <div class="mode-chip hold">HOLD</div>
+            </div>
+          </td>
+        </tr>
+
+        <tr class="r-wildcard">
+          <td class="fn-cell">
+            <div class="fn-row">
+              <div class="fn-color-bar" style="background:var(--wild);box-shadow:0 0 6px var(--wild)"></div>
+              <div>
+                <div class="fn-name">4 &nbsp; Wildcard</div>
+                <div class="fn-sub">Texture · Atmosphere</div>
+              </div>
+            </div>
+          </td>
+          <td class="sep-cell"></td>
+          <td class="key-cell">
+            <div class="key-chip assigned"><div class="kc-led"></div><div class="kc-slot">A</div><div class="kc-note">F3</div></div>
+          </td>
+          <td class="key-cell">
+            <div class="key-chip"><div class="kc-slot" style="color:var(--text-lo)">B</div><div class="kc-note">G3</div></div>
+          </td>
+          <td class="key-cell">
+            <div class="key-chip"><div class="kc-slot" style="color:var(--text-lo)">C</div><div class="kc-note">A3</div></div>
+          </td>
+          <td class="sep-cell"></td>
+          <td class="note-cell">F3 – A3</td>
+          <td class="mode-cell">
+            <div class="mode-chips">
+              <div class="mode-chip free">FREE</div>
+              <div class="mode-chip hold">HOLD</div>
+            </div>
+          </td>
+        </tr>
+
+        <!-- ONE-SHOTS divider -->
+        <tr><td colspan="8" class="matrix-section-hdr">Performance One-Shots</td></tr>
+
+        <tr class="r-fills">
+          <td class="fn-cell">
+            <div class="fn-row">
+              <div class="fn-color-bar" style="background:var(--fills);box-shadow:0 0 6px var(--fills)"></div>
+              <div>
+                <div class="fn-name">Fills</div>
+                <div class="fn-sub">Rhythmic fills · Trigger once</div>
+              </div>
+            </div>
+          </td>
+          <td class="sep-cell"></td>
+          <td class="key-cell">
+            <div class="key-chip"><div class="kc-slot" style="color:var(--fills)">1</div><div class="kc-note">B3</div></div>
+          </td>
+          <td class="key-cell">
+            <div class="key-chip"><div class="kc-slot" style="color:var(--fills)">2</div><div class="kc-note">C4</div></div>
+          </td>
+          <td class="key-cell">
+            <div class="key-chip"><div class="kc-slot" style="color:var(--fills)">3</div><div class="kc-note">D4</div></div>
+          </td>
+          <td class="sep-cell"></td>
+          <td class="note-cell">B3 – D4</td>
+          <td class="mode-cell">
+            <div class="mode-chips"><div class="mode-chip both">ONE-SHOT</div></div>
+          </td>
+        </tr>
+
+        <tr class="r-trans">
+          <td class="fn-cell">
+            <div class="fn-row">
+              <div class="fn-color-bar" style="background:var(--trans);box-shadow:0 0 6px var(--trans)"></div>
+              <div>
+                <div class="fn-name">Transitions</div>
+                <div class="fn-sub">Risers · Downlifters · Trigger once</div>
+              </div>
+            </div>
+          </td>
+          <td class="sep-cell"></td>
+          <td class="key-cell">
+            <div class="key-chip"><div class="kc-slot" style="color:var(--trans)">1</div><div class="kc-note">E4</div></div>
+          </td>
+          <td class="key-cell">
+            <div class="key-chip"><div class="kc-slot" style="color:var(--trans)">2</div><div class="kc-note">F4</div></div>
+          </td>
+          <td class="key-cell">
+            <div class="key-chip"><div class="kc-slot" style="color:var(--trans)">3</div><div class="kc-note">G4</div></div>
+          </td>
+          <td class="sep-cell"></td>
+          <td class="note-cell">E4 – G4</td>
+          <td class="mode-cell">
+            <div class="mode-chips"><div class="mode-chip both">ONE-SHOT</div></div>
+          </td>
+        </tr>
+
+      </tbody>
+    </table>
+
+    <!-- Legend -->
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-swatch" style="background:var(--scenes);box-shadow:0 0 6px var(--scenes);border-radius:50%"></div>
+        <span class="legend-txt">Playing</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-swatch" style="background:rgba(255,255,255,0.08);border:1px solid var(--border)"></div>
+        <span class="legend-txt">Assigned · Silent</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-swatch" style="background:transparent;border:1px solid #333"></div>
+        <span class="legend-txt">Empty · Unassigned</span>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:12px;align-items:center;">
+        <span class="legend-txt">FREE = latch on/off &nbsp;·&nbsp; HOLD = plays while key held &nbsp;·&nbsp; Trigger keys = white keys only</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

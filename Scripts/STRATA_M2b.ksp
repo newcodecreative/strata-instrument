@@ -1,0 +1,207 @@
+{ STRATA - Milestone 2b }
+{ Armed two-press bar sync. Natural keypresses only. }
+{ FREE = gated. HOLD = bar-synced latch. }
+
+on init
+  declare %trig[4]
+  declare %mode_key[4]
+  declare %playing[4]
+  declare %voice_id[4]
+  declare %ch_mode[4]
+  declare %pending[4]
+  declare %armed[4]
+  declare $ch
+  declare $display
+
+  %trig[0] := 50
+  %trig[1] := 55
+  %trig[2] := 60
+  %trig[3] := 65
+
+  %mode_key[0] := 48
+  %mode_key[1] := 52
+  %mode_key[2] := 57
+  %mode_key[3] := 62
+
+  %playing[0]  := 0
+  %playing[1]  := 0
+  %playing[2]  := 0
+  %playing[3]  := 0
+
+  %voice_id[0] := -1
+  %voice_id[1] := -1
+  %voice_id[2] := -1
+  %voice_id[3] := -1
+
+  %ch_mode[0]  := 0
+  %ch_mode[1]  := 0
+  %ch_mode[2]  := 0
+  %ch_mode[3]  := 0
+
+  %pending[0]  := 0
+  %pending[1]  := 0
+  %pending[2]  := 0
+  %pending[3]  := 0
+
+  %armed[0]    := 0
+  %armed[1]    := 0
+  %armed[2]    := 0
+  %armed[3]    := 0
+
+  message("STRATA M2b ready")
+end on
+
+
+on note
+
+  { Mode toggle keys }
+  if ($EVENT_NOTE = %mode_key[0])
+    ignore_event($EVENT_ID)
+    if (%ch_mode[0] = 0)
+      %ch_mode[0] := 1
+      message("CH1 > HOLD")
+    else
+      %ch_mode[0] := 0
+      message("CH1 > FREE")
+    end if
+    exit
+  end if
+  if ($EVENT_NOTE = %mode_key[1])
+    ignore_event($EVENT_ID)
+    if (%ch_mode[1] = 0)
+      %ch_mode[1] := 1
+      message("CH2 > HOLD")
+    else
+      %ch_mode[1] := 0
+      message("CH2 > FREE")
+    end if
+    exit
+  end if
+  if ($EVENT_NOTE = %mode_key[2])
+    ignore_event($EVENT_ID)
+    if (%ch_mode[2] = 0)
+      %ch_mode[2] := 1
+      message("CH3 > HOLD")
+    else
+      %ch_mode[2] := 0
+      message("CH3 > FREE")
+    end if
+    exit
+  end if
+  if ($EVENT_NOTE = %mode_key[3])
+    ignore_event($EVENT_ID)
+    if (%ch_mode[3] = 0)
+      %ch_mode[3] := 1
+      message("CH4 > HOLD")
+    else
+      %ch_mode[3] := 0
+      message("CH4 > FREE")
+    end if
+    exit
+  end if
+
+  { Find trigger channel }
+  $ch := -1
+  if ($EVENT_NOTE = %trig[0])
+    $ch := 0
+  end if
+  if ($EVENT_NOTE = %trig[1])
+    $ch := 1
+  end if
+  if ($EVENT_NOTE = %trig[2])
+    $ch := 2
+  end if
+  if ($EVENT_NOTE = %trig[3])
+    $ch := 3
+  end if
+
+  if ($ch = -1)
+    exit
+  end if
+
+  { FREE MODE - natural gated }
+  if (%ch_mode[$ch] = 0)
+    %voice_id[$ch] := $EVENT_ID
+    %playing[$ch]  := 1
+    $display := $ch + 1
+    message("CH" & $display & " FREE")
+  end if
+
+  { HOLD MODE }
+  if (%ch_mode[$ch] = 1)
+
+    { ARMED: natural keypress starts the loop - no play_note needed }
+    if (%armed[$ch] = 1)
+      %armed[$ch]    := 0
+      %voice_id[$ch] := $EVENT_ID
+      %playing[$ch]  := 1
+      $display := $ch + 1
+      message("CH" & $display & " started")
+    else
+
+      { All other HOLD presses: suppress the note }
+      ignore_event($EVENT_ID)
+
+      if (%playing[$ch] = 1)
+        { STOP }
+        note_off(%voice_id[$ch])
+        %voice_id[$ch] := -1
+        %playing[$ch]  := 0
+        %armed[$ch]    := 0
+        $display := $ch + 1
+        message("CH" & $display & " stopped")
+      else
+        { QUEUE or CANCEL }
+        if (%pending[$ch] = 0)
+          %pending[$ch] := 1
+          $display := $ch + 1
+          message("CH" & $display & " queued for bar...")
+          wait_ticks(3840)
+          if (%pending[$ch] = 1)
+            %pending[$ch] := 0
+            %armed[$ch]   := 1
+            $display := $ch + 1
+            message("CH" & $display & " bar ready - press D2")
+          end if
+        else
+          %pending[$ch] := 0
+          $display := $ch + 1
+          message("CH" & $display & " cancelled")
+        end if
+      end if
+
+    end if
+  end if
+end on
+
+
+on release
+  $ch := -1
+  if ($EVENT_NOTE = %trig[0])
+    $ch := 0
+  end if
+  if ($EVENT_NOTE = %trig[1])
+    $ch := 1
+  end if
+  if ($EVENT_NOTE = %trig[2])
+    $ch := 2
+  end if
+  if ($EVENT_NOTE = %trig[3])
+    $ch := 3
+  end if
+
+  if ($ch = -1)
+    exit
+  end if
+
+  if (%ch_mode[$ch] = 0)
+    %playing[$ch]  := 0
+    %voice_id[$ch] := -1
+    $display := $ch + 1
+    message("CH" & $display & " FREE released")
+  end if
+
+  if (%ch_mode[$ch] = 1)
+    ignore_event($EVENT_ID)
+  end if
+end on
