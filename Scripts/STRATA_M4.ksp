@@ -1,0 +1,430 @@
+{ STRATA - Milestone 4 }
+{ Energy level selection E1-E5 per channel }
+{ Energy keys: notes 0-19, no Mapping Editor changes needed }
+{ DRUMS: 0-4, BASS: 5-9, TOP LINE: 10-14, WILDCARD: 15-19 }
+
+on init
+  declare %trig[4]
+  declare %mode_key[4]
+  declare %nav_prev[4]
+  declare %nav_next[4]
+  declare %playing[4]
+  declare %voice_id[4]
+  declare %ch_mode[4]
+  declare %pending[4]
+  declare %armed[4]
+  declare %loop_idx[4]
+  declare %ch_energy[4]
+  declare $ch
+  declare $display
+  declare $internal_note
+  declare $new_energy
+  declare $old_energy_note
+
+  %trig[0] := 50
+  %trig[1] := 55
+  %trig[2] := 60
+  %trig[3] := 65
+
+  %mode_key[0] := 48
+  %mode_key[1] := 52
+  %mode_key[2] := 57
+  %mode_key[3] := 62
+
+  %nav_prev[0] := 46
+  %nav_next[0] := 49
+  %nav_prev[1] := 54
+  %nav_next[1] := 58
+  %nav_prev[2] := 61
+  %nav_next[2] := 63
+  %nav_prev[3] := 66
+  %nav_next[3] := 68
+
+  %playing[0] := 0
+  %playing[1] := 0
+  %playing[2] := 0
+  %playing[3] := 0
+  %voice_id[0] := -1
+  %voice_id[1] := -1
+  %voice_id[2] := -1
+  %voice_id[3] := -1
+  %ch_mode[0] := 0
+  %ch_mode[1] := 0
+  %ch_mode[2] := 0
+  %ch_mode[3] := 0
+  %pending[0] := 0
+  %pending[1] := 0
+  %pending[2] := 0
+  %pending[3] := 0
+  %armed[0] := 0
+  %armed[1] := 0
+  %armed[2] := 0
+  %armed[3] := 0
+  %loop_idx[0] := 0
+  %loop_idx[1] := 0
+  %loop_idx[2] := 0
+  %loop_idx[3] := 0
+  $internal_note := 0
+  $new_energy := 0
+  $old_energy_note := 0
+
+  { Default energy = E3 (index 2) for all channels }
+  %ch_energy[0] := 2
+  %ch_energy[1] := 2
+  %ch_energy[2] := 2
+  %ch_energy[3] := 2
+
+  { ENERGY KEY COLORS - inactive = white, active E3 = channel color }
+  set_key_color(0, $KEY_COLOR_WHITE)
+  set_key_color(1, $KEY_COLOR_WHITE)
+  set_key_color(2, $KEY_COLOR_BLUE)
+  set_key_color(3, $KEY_COLOR_WHITE)
+  set_key_color(4, $KEY_COLOR_WHITE)
+  set_key_color(5, $KEY_COLOR_WHITE)
+  set_key_color(6, $KEY_COLOR_WHITE)
+  set_key_color(7, $KEY_COLOR_PURPLE)
+  set_key_color(8, $KEY_COLOR_WHITE)
+  set_key_color(9, $KEY_COLOR_WHITE)
+  set_key_color(10, $KEY_COLOR_WHITE)
+  set_key_color(11, $KEY_COLOR_WHITE)
+  set_key_color(12, $KEY_COLOR_GREEN)
+  set_key_color(13, $KEY_COLOR_WHITE)
+  set_key_color(14, $KEY_COLOR_WHITE)
+  set_key_color(15, $KEY_COLOR_WHITE)
+  set_key_color(16, $KEY_COLOR_WHITE)
+  set_key_color(17, $KEY_COLOR_WARM_YELLOW)
+  set_key_color(18, $KEY_COLOR_WHITE)
+  set_key_color(19, $KEY_COLOR_WHITE)
+
+  { ENERGY KEY LABELS }
+  set_key_name(0, "DRUMS E1 - Sparse")
+  set_key_name(1, "DRUMS E2 - Light")
+  set_key_name(2, "DRUMS E3 - Drive")
+  set_key_name(3, "DRUMS E4 - Heavy")
+  set_key_name(4, "DRUMS E5 - Dense")
+  set_key_name(5, "BASS E1 - Sparse")
+  set_key_name(6, "BASS E2 - Light")
+  set_key_name(7, "BASS E3 - Drive")
+  set_key_name(8, "BASS E4 - Heavy")
+  set_key_name(9, "BASS E5 - Dense")
+  set_key_name(10, "TOP LINE E1 - Sparse")
+  set_key_name(11, "TOP LINE E2 - Light")
+  set_key_name(12, "TOP LINE E3 - Drive")
+  set_key_name(13, "TOP LINE E4 - Heavy")
+  set_key_name(14, "TOP LINE E5 - Dense")
+  set_key_name(15, "WILDCARD E1 - Sparse")
+  set_key_name(16, "WILDCARD E2 - Light")
+  set_key_name(17, "WILDCARD E3 - Drive")
+  set_key_name(18, "WILDCARD E4 - Heavy")
+  set_key_name(19, "WILDCARD E5 - Dense")
+
+  { PERFORMANCE KEY COLORS - same as M3 }
+  set_key_color(50, $KEY_COLOR_BLUE)
+  set_key_color(55, $KEY_COLOR_PURPLE)
+  set_key_color(60, $KEY_COLOR_GREEN)
+  set_key_color(65, $KEY_COLOR_WARM_YELLOW)
+  set_key_color(48, $KEY_COLOR_WHITE)
+  set_key_color(52, $KEY_COLOR_WHITE)
+  set_key_color(57, $KEY_COLOR_WHITE)
+  set_key_color(62, $KEY_COLOR_WHITE)
+  set_key_color(46, $KEY_COLOR_CYAN)
+  set_key_color(49, $KEY_COLOR_CYAN)
+  set_key_color(54, $KEY_COLOR_PLUM)
+  set_key_color(58, $KEY_COLOR_PLUM)
+  set_key_color(61, $KEY_COLOR_LIME)
+  set_key_color(63, $KEY_COLOR_LIME)
+  set_key_color(66, $KEY_COLOR_WARM_YELLOW)
+  set_key_color(68, $KEY_COLOR_WARM_YELLOW)
+
+  { PERFORMANCE KEY LABELS - same as M3 }
+  set_key_name(50, "DRUMS Trigger")
+  set_key_name(55, "BASS Trigger")
+  set_key_name(60, "TOP LINE Trigger")
+  set_key_name(65, "WILDCARD Trigger")
+  set_key_name(48, "CH1 FREE / HOLD")
+  set_key_name(52, "CH2 FREE / HOLD")
+  set_key_name(57, "CH3 FREE / HOLD")
+  set_key_name(62, "CH4 FREE / HOLD")
+  set_key_name(46, "DRUMS Prev Loop")
+  set_key_name(49, "DRUMS Next Loop")
+  set_key_name(54, "BASS Prev Loop")
+  set_key_name(58, "BASS Next Loop")
+  set_key_name(61, "TOP LINE Prev Loop")
+  set_key_name(63, "TOP LINE Next Loop")
+  set_key_name(66, "WILDCARD Prev Loop")
+  set_key_name(68, "WILDCARD Next Loop")
+
+  message("STRATA M4 ready")
+end on
+
+on note
+  { ENERGY KEYS - notes 0 to 19 }
+  if ($EVENT_NOTE <= 19)
+    ignore_event($EVENT_ID)
+    $ch := $EVENT_NOTE / 5
+    $new_energy := $EVENT_NOTE mod 5
+    $old_energy_note := $ch * 5 + %ch_energy[$ch]
+    set_key_color($old_energy_note, $KEY_COLOR_WHITE)
+    %ch_energy[$ch] := $new_energy
+    if ($ch = 0)
+      set_key_color($EVENT_NOTE, $KEY_COLOR_BLUE)
+    end if
+    if ($ch = 1)
+      set_key_color($EVENT_NOTE, $KEY_COLOR_PURPLE)
+    end if
+    if ($ch = 2)
+      set_key_color($EVENT_NOTE, $KEY_COLOR_GREEN)
+    end if
+    if ($ch = 3)
+      set_key_color($EVENT_NOTE, $KEY_COLOR_WARM_YELLOW)
+    end if
+    $display := $ch + 1
+    message("CH" & $display & " energy E" & ($new_energy + 1))
+    exit
+  end if
+
+  { MODE TOGGLE KEYS }
+  if ($EVENT_NOTE = %mode_key[0])
+    ignore_event($EVENT_ID)
+    if (%ch_mode[0] = 0)
+      %ch_mode[0] := 1
+      message("CH1 > HOLD")
+    else
+      %ch_mode[0] := 0
+      message("CH1 > FREE")
+    end if
+    exit
+  end if
+  if ($EVENT_NOTE = %mode_key[1])
+    ignore_event($EVENT_ID)
+    if (%ch_mode[1] = 0)
+      %ch_mode[1] := 1
+      message("CH2 > HOLD")
+    else
+      %ch_mode[1] := 0
+      message("CH2 > FREE")
+    end if
+    exit
+  end if
+  if ($EVENT_NOTE = %mode_key[2])
+    ignore_event($EVENT_ID)
+    if (%ch_mode[2] = 0)
+      %ch_mode[2] := 1
+      message("CH3 > HOLD")
+    else
+      %ch_mode[2] := 0
+      message("CH3 > FREE")
+    end if
+    exit
+  end if
+  if ($EVENT_NOTE = %mode_key[3])
+    ignore_event($EVENT_ID)
+    if (%ch_mode[3] = 0)
+      %ch_mode[3] := 1
+      message("CH4 > HOLD")
+    else
+      %ch_mode[3] := 0
+      message("CH4 > FREE")
+    end if
+    exit
+  end if
+
+  { NAVIGATION - DRUMS }
+  if ($EVENT_NOTE = %nav_prev[0])
+    ignore_event($EVENT_ID)
+    if (%loop_idx[0] > 0)
+      %loop_idx[0] := %loop_idx[0] - 1
+    else
+      %loop_idx[0] := 7
+    end if
+    message("DRUMS loop " & (%loop_idx[0] + 1) & " / 8")
+    exit
+  end if
+  if ($EVENT_NOTE = %nav_next[0])
+    ignore_event($EVENT_ID)
+    if (%loop_idx[0] < 7)
+      %loop_idx[0] := %loop_idx[0] + 1
+    else
+      %loop_idx[0] := 0
+    end if
+    message("DRUMS loop " & (%loop_idx[0] + 1) & " / 8")
+    exit
+  end if
+
+  { NAVIGATION - BASS }
+  if ($EVENT_NOTE = %nav_prev[1])
+    ignore_event($EVENT_ID)
+    if (%loop_idx[1] > 0)
+      %loop_idx[1] := %loop_idx[1] - 1
+    else
+      %loop_idx[1] := 7
+    end if
+    message("BASS loop " & (%loop_idx[1] + 1) & " / 8")
+    exit
+  end if
+  if ($EVENT_NOTE = %nav_next[1])
+    ignore_event($EVENT_ID)
+    if (%loop_idx[1] < 7)
+      %loop_idx[1] := %loop_idx[1] + 1
+    else
+      %loop_idx[1] := 0
+    end if
+    message("BASS loop " & (%loop_idx[1] + 1) & " / 8")
+    exit
+  end if
+
+  { NAVIGATION - TOP LINE }
+  if ($EVENT_NOTE = %nav_prev[2])
+    ignore_event($EVENT_ID)
+    if (%loop_idx[2] > 0)
+      %loop_idx[2] := %loop_idx[2] - 1
+    else
+      %loop_idx[2] := 7
+    end if
+    message("TOP LINE loop " & (%loop_idx[2] + 1) & " / 8")
+    exit
+  end if
+  if ($EVENT_NOTE = %nav_next[2])
+    ignore_event($EVENT_ID)
+    if (%loop_idx[2] < 7)
+      %loop_idx[2] := %loop_idx[2] + 1
+    else
+      %loop_idx[2] := 0
+    end if
+    message("TOP LINE loop " & (%loop_idx[2] + 1) & " / 8")
+    exit
+  end if
+
+  { NAVIGATION - WILDCARD }
+  if ($EVENT_NOTE = %nav_prev[3])
+    ignore_event($EVENT_ID)
+    if (%loop_idx[3] > 0)
+      %loop_idx[3] := %loop_idx[3] - 1
+    else
+      %loop_idx[3] := 7
+    end if
+    message("WILDCARD loop " & (%loop_idx[3] + 1) & " / 8")
+    exit
+  end if
+  if ($EVENT_NOTE = %nav_next[3])
+    ignore_event($EVENT_ID)
+    if (%loop_idx[3] < 7)
+      %loop_idx[3] := %loop_idx[3] + 1
+    else
+      %loop_idx[3] := 0
+    end if
+    message("WILDCARD loop " & (%loop_idx[3] + 1) & " / 8")
+    exit
+  end if
+
+  { FIND TRIGGER CHANNEL }
+  $ch := -1
+  if ($EVENT_NOTE = %trig[0])
+    $ch := 0
+  end if
+  if ($EVENT_NOTE = %trig[1])
+    $ch := 1
+  end if
+  if ($EVENT_NOTE = %trig[2])
+    $ch := 2
+  end if
+  if ($EVENT_NOTE = %trig[3])
+    $ch := 3
+  end if
+  if ($ch = -1)
+    exit
+  end if
+
+  { ROUTE TO SELECTED LOOP ZONE }
+  $internal_note := 70 + $ch * 8 + %loop_idx[$ch]
+  change_note($EVENT_ID, $internal_note)
+
+  { FREE MODE }
+  if (%ch_mode[$ch] = 0)
+    %voice_id[$ch] := $EVENT_ID
+    %playing[$ch] := 1
+    $display := $ch + 1
+    message("CH" & $display & " FREE L" & (%loop_idx[$ch] + 1) & " E" & (%ch_energy[$ch] + 1))
+  end if
+
+  { HOLD MODE }
+  if (%ch_mode[$ch] = 1)
+    if (%armed[$ch] = 1)
+      %armed[$ch] := 0
+      %voice_id[$ch] := $EVENT_ID
+      %playing[$ch] := 1
+      $display := $ch + 1
+      message("CH" & $display & " HOLD L" & (%loop_idx[$ch] + 1) & " E" & (%ch_energy[$ch] + 1))
+    else
+      ignore_event($EVENT_ID)
+      if (%playing[$ch] = 1)
+        note_off(%voice_id[$ch])
+        %voice_id[$ch] := -1
+        %playing[$ch] := 0
+        %armed[$ch] := 0
+        $display := $ch + 1
+        message("CH" & $display & " stopped")
+      else
+        if (%pending[$ch] = 0)
+          %pending[$ch] := 1
+          $display := $ch + 1
+          message("CH" & $display & " queued for bar...")
+          wait_ticks(3840)
+          if (%pending[$ch] = 1)
+            %pending[$ch] := 0
+            %armed[$ch] := 1
+            $display := $ch + 1
+            message("CH" & $display & " bar ready - press to start")
+          end if
+        else
+          %pending[$ch] := 0
+          $display := $ch + 1
+          message("CH" & $display & " cancelled")
+        end if
+      end if
+    end if
+  end if
+
+end on
+
+on release
+  { Suppress energy key releases }
+  if ($EVENT_NOTE <= 19)
+    ignore_event($EVENT_ID)
+    exit
+  end if
+
+  $ch := -1
+  if ($EVENT_NOTE = %trig[0])
+    $ch := 0
+  end if
+  if ($EVENT_NOTE = %trig[1])
+    $ch := 1
+  end if
+  if ($EVENT_NOTE = %trig[2])
+    $ch := 2
+  end if
+  if ($EVENT_NOTE = %trig[3])
+    $ch := 3
+  end if
+  if ($ch = -1)
+    if ($EVENT_NOTE >= 70)
+      $ch := ($EVENT_NOTE - 70) / 8
+      if ($ch > 3)
+        $ch := -1
+      end if
+    end if
+  end if
+  if ($ch = -1)
+    exit
+  end if
+  if (%ch_mode[$ch] = 0)
+    %playing[$ch] := 0
+    %voice_id[$ch] := -1
+    $display := $ch + 1
+    message("CH" & $display & " FREE released")
+  end if
+  if (%ch_mode[$ch] = 1)
+    ignore_event($EVENT_ID)
+  end if
+end on
